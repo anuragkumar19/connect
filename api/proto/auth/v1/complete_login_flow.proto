@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package auth.v1;
+
+import "google/protobuf/timestamp.proto";
+
+message CompleteLoginFlowRequest {
+  int64 id = 1;
+}
+
+message CompleteLoginFlowResponse {
+  string access_token = 1;
+  google.protobuf.Timestamp access_token_expire_at = 2;
+  string refresh_toke = 3;
+}

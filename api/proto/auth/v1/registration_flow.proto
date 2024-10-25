@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package auth.v1;
+
+import "auth/v1/fields.proto";
+import "google/protobuf/timestamp.proto";
+
+message RegistrationFlowFields {
+  optional ValueField email = 1;
+  optional ValueField phone_number = 2;
+  optional ValueField name = 3;
+  optional ValueField username = 4;
+  optional PasswordField password = 5;
+  optional VerificationCodeField email_code = 6;
+  optional VerificationCodeField phone_number_code = 7;
+}
+
+enum RegistrationFlowState {
+  REGISTRATION_FLOW_STATE_UNSPECIFIED = 0;
+  REGISTRATION_FLOW_STATE_INVALID_FIELDS = 1;
+  REGISTRATION_FLOW_STATE_VERIFICATION_CODE_SENT = 2;
+  REGISTRATION_FLOW_STATE_COMPLETED = 4;
+}
+
+message RegistrationFlow {
+  int64 id = 1;
+  google.protobuf.Timestamp created_at = 2;
+  google.protobuf.Timestamp updated_at = 4;
+  google.protobuf.Timestamp expire_at = 5;
+  string csrf_token = 7;
+
+  RegistrationFlowFields fields = 8;
+
+  RegistrationFlowState state = 9;
+}

@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package auth.v1;
+
+import "auth/v1/complete_registration_flow.proto";
+import "auth/v1/create_registration_flow.proto";
+import "auth/v1/delete_registration_flow.proto";
+import "auth/v1/update_registration_flow.proto";
+
+service RegistrationService {
+  rpc CreateRegistrationFlow(CreateRegistrationFlowRequest) returns (CreateRegistrationFlowResponse);
+  rpc UpdateRegistrationFlow(UpdateRegistrationFlowRequest) returns (UpdateRegistrationFlowResponse);
+  rpc DeleteRegistrationFlow(DeleteRegistrationFlowRequest) returns (DeleteRegistrationFlowResponse);
+  rpc CompleteRegistrationFlow(CompleteRegistrationFlowRequest) returns (CompleteRegistrationFlowResponse);
+}

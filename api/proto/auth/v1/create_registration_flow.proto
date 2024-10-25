@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package auth.v1;
+
+import "auth/v1/registration_flow.proto";
+
+message CreateRegistrationFlowRequest {}
+
+message CreateRegistrationFlowResponse {
+  RegistrationFlow flow = 1;
+  string token = 2;
+}
