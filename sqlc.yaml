@@ -13,3 +13,8 @@ sql:
         emit_enum_valid_method: true
         emit_params_struct_pointers: true
         emit_interface: true
+        overrides:
+          - db_type: "timestamptz"
+            go_type:
+              import: "time"
+              type: "Time"

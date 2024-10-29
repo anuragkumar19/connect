@@ -28,7 +28,8 @@
 - Setup e2e test
 - Auth middleware
 - CORS middleware
-- Git commit hash/release version integration ref- grafana & let's go further
+- Git commit hash/release version integration ref- grafana & let's go further - partially done, automating with taskfile remains
+- Setup cspell
 - Setup docker
 - Live reload for generators and go build
 - Managing tools
@@ -42,3 +43,10 @@
 - Learn about otel, metrics and logging
 - Grafana, logs, otel, prometheus
 - Checkout links in whatsapp
+
+
+## TODO NOW AFTER BREAK
+- DOCKER GO BUILD CACHE AND MODULE DOWNLOAD CACHE VOLUME MOUNT
+- DOCKER COMPOSE WITH DB/NATS
+- ✔ SETUP CONFIG LOADING AND MANAGEMENT
+- SETUP TOKEN (NOT REQUIRED)

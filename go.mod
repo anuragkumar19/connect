@@ -4,15 +4,21 @@ go 1.23.1
 
 require (
 	connectrpc.com/connect v1.17.0
+	connectrpc.com/cors v0.1.0
+	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/jackc/pgx/v5 v5.7.1
 	github.com/minio/minio-go/v7 v7.0.78
 	github.com/nats-io/nats.go v1.37.0
+	github.com/rs/cors v1.11.1
 	github.com/rs/zerolog v1.33.0
+	go.uber.org/automaxprocs v1.6.0
+	golang.org/x/net v0.30.0
 	google.golang.org/protobuf v1.35.1
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 )
 
 require (
+	github.com/asaskevich/govalidator v0.0.0-20200108200545-475eaeb16496 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
 	github.com/goccy/go-json v0.10.3 // indirect
@@ -29,7 +35,6 @@ require (
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/rs/xid v1.6.0 // indirect
 	golang.org/x/crypto v0.28.0 // indirect
-	golang.org/x/net v0.30.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.26.0 // indirect
 	golang.org/x/text v0.19.0 // indirect

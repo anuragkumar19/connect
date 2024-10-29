@@ -3,9 +3,9 @@ output: prefixed
 interval: 0s
 dotenv: [".env"]
 # vars:
-
 #   MAIN: cmd/main.go
 #   BIN: tmp/bookmymovie.exe
+#   LINKER_FLAG: -s -X main.buildTime={{.current_time}} -X main.version={{.git_description}}
 tasks:
   fmt:
     cmds:
@@ -55,10 +55,10 @@ tasks:
   migrate:
     env:
       GOOSE_DRIVER: postgres
-      GOOSE_DBSTRING: "{{.DATABASE_URI}}"
+      GOOSE_DBSTRING: "{{.POSTGRES_URI}}"
       GOOSE_MIGRATION_DIR: database/sql/schema
     cmds:
       - goose {{.CLI_ARGS}}
     requires:
       vars:
-        - DATABASE_URI
+        - POSTGRES_URI
