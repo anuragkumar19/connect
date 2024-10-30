@@ -1,12 +1,10 @@
 package nats
 
 import (
-	"strings"
 	"time"
 
 	"github.com/anuragkumar19/connect/env"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/go-ozzo/ozzo-validation/v4/is"
 )
 
 type Config struct {
@@ -45,12 +43,12 @@ func (config Config) Validate() error {
 		&config,
 		validation.Field(&config.Name, validation.Required),
 		validation.Field(&config.Servers, validation.Required, validation.NewStringRule(func(v string) bool {
-			s := strings.Split(v, ",")
-			for _, ss := range s {
-				if err := is.URL.Validate(ss); err != nil {
-					return false
-				}
-			}
+			// s := strings.Split(v, ",")
+			// for _, ss := range s {
+			// 	if err := is.URL.Validate(ss); err != nil {
+			// 		return false
+			// 	}
+			// }
 			return true
 		}, "invalid servers url string")),
 		validation.Field(&config.PingInterval, validation.Required, validation.Min(time.Second)),

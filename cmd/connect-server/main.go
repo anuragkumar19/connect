@@ -10,6 +10,7 @@ import (
 	"github.com/anuragkumar19/connect/database"
 	"github.com/anuragkumar19/connect/infra/nats"
 	"github.com/anuragkumar19/connect/infra/postgres"
+	"github.com/anuragkumar19/connect/infra/smtp"
 	"github.com/anuragkumar19/connect/infra/storage"
 	"github.com/rs/zerolog"
 	"go.uber.org/automaxprocs/maxprocs"
@@ -84,13 +85,22 @@ func main() {
 		logger.Fatal().Err(err).Msg("storage init failed")
 	}
 
+	smtpCfg, err := smtp.AutoConfig()
+	if err != nil {
+		logger.Fatal().Err(err).Msg("failed to parse smtp config")
+	}
+	smtpClient, err := smtp.New(ctx, smtpCfg, &logger)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("smtp init failed")
+	}
+
 	// TODO: graceful shutdown
 	// TODO: background services and consumers
 	// TODO: prometheus
 
 	database := database.New(pgConn)
 
-	server := api.NewServer(&logger, database, &natsConn, &storageClient)
+	server := api.NewServer(&logger, database, &natsConn, &storageClient, &smtpClient)
 
 	if err := server.Serve(); err != nil {
 		logger.Fatal().Err(err).Send()

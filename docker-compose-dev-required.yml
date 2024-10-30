@@ -1,0 +1,52 @@
+services:
+  pg:
+    image: postgres:17
+    container_name: pg
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+  nats:
+    image: nats:2-alpine
+    container_name: nats
+    restart: always
+    ports:
+      - 4222:4222
+      - 8222:8222
+    command: "--port 4222 --http_port 8222 --auth nats -js"
+  minio:
+    image: quay.io/minio/minio
+    container_name: minio
+    ports:
+      - 9000:9000
+      - 9001:9001
+    volumes:
+      - miniodata:/data
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=password
+    command: server /data --console-address ":9001"
+  mailpit:
+    image: axllent/mailpit:v1.21
+    container_name: mailpit
+    restart: always
+    volumes:
+      - mailpitdata:/data
+    ports:
+      - 8025:8025
+      - 1025:1025
+    environment:
+      MP_MAX_MESSAGES: 5000
+      MP_DATABASE: /data/mailpit.db
+      MP_SMTP_AUTH: admin:admin
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+
+volumes:
+  pgdata:
+  miniodata:
+  mailpitdata:

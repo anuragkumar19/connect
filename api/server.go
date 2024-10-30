@@ -10,6 +10,7 @@ import (
 	"github.com/anuragkumar19/connect/api/services/auth/registration"
 	"github.com/anuragkumar19/connect/database"
 	"github.com/anuragkumar19/connect/infra/nats"
+	"github.com/anuragkumar19/connect/infra/smtp"
 	"github.com/anuragkumar19/connect/infra/storage"
 	"github.com/rs/cors"
 	"github.com/rs/zerolog"
@@ -23,7 +24,7 @@ type HTTPServer struct {
 	passwordResetService *passwordreset.Service
 }
 
-func NewServer(logger *zerolog.Logger, db *database.Queries, nt *nats.NATS, s *storage.Storage) HTTPServer {
+func NewServer(logger *zerolog.Logger, db *database.Queries, nt *nats.NATS, s *storage.Storage, mailerClient *smtp.SMTP) HTTPServer {
 	registrationService := registration.New(logger)
 	loginService := login.New(logger)
 	passwordService := passwordreset.New(logger)

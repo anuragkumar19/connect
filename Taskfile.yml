@@ -55,7 +55,6 @@ tasks:
       - dev-build-go
     cmds:
       - "{{.CONNECT_SERVER_DEV_BIN}}"
-
   fmt-protobuf:
     cmds:
       - "{{.BUF_BIN}} format -w"

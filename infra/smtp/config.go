@@ -3,7 +3,6 @@ package smtp
 import (
 	"github.com/anuragkumar19/connect/env"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/go-ozzo/ozzo-validation/v4/is"
 )
 
 type Config struct {
@@ -31,7 +30,7 @@ func AutoConfig() (*Config, error) {
 func (config Config) Validate() error {
 	return validation.ValidateStruct(
 		&config,
-		validation.Field(&config.Host, validation.Required, is.URL),
+		validation.Field(&config.Host, validation.Required),
 		validation.Field(&config.Port, validation.Required),
 		validation.Field(&config.Username, validation.Required),
 		validation.Field(&config.Password, validation.Required),
