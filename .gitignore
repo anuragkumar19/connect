@@ -28,3 +28,4 @@ go.work.sum
 .task/
 tmp/
 tools/bin/
+bin/
