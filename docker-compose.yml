@@ -12,14 +12,13 @@ services:
     environment:
       POSTGRES_URI: postgresql://postgres:postgres@pg:5432/postgres
       # nats:
-      #   condition: service_healthy
-      # minio:
-      #   condition: service_healthy
+    #   condition: service_healthy
+    # minio:
+    #   condition: service_healthy
     develop:
       watch:
         - path: ./go.mod, ./go.sum, ./**/*.go
           action: rebuild
-            
   pg:
     image: postgres:17
     restart: always
@@ -48,8 +47,5 @@ services:
         - path: database/sql/schema
           action: sync+restart
           target: /app/database/sql/schema
-
-    
-
 volumes:
   pgdata:

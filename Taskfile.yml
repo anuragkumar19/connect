@@ -2,20 +2,31 @@ version: "3"
 output: prefixed
 interval: 0s
 dotenv: [".env"]
-# vars:
-#   MAIN: cmd/main.go
-#   BIN: tmp/bookmymovie.exe
-#   LINKER_FLAG: -s -X main.buildTime={{.current_time}} -X main.version={{.git_description}}
+vars:
+  PWD:
+    sh: "pwd"
+  BUF_BIN: '{{joinPath .PWD "tools/bin/buf" | toSlash}}{{exeExt}}'
+  YAML_FMT_BIN: '{{joinPath .PWD "tools/bin/yamlfmt" | toSlash}}{{exeExt}}'
+  GOOSE_BIN: '{{joinPath .PWD "tools/bin/goose" | toSlash}}{{exeExt}}'
+  SQLC_BIN: '{{joinPath .PWD "tools/bin/sqlc" | toSlash}}{{exeExt}}'
 tasks:
+  setup:
+    dir: "tools"
+    cmds:
+      - go mod download
+      - go build -o {{shellQuote .BUF_BIN}} github.com/bufbuild/buf/cmd/buf
+      - go build -o {{shellQuote .YAML_FMT_BIN}} github.com/google/yamlfmt/cmd/yamlfmt
+      - go build -o {{shellQuote .GOOSE_BIN}} github.com/pressly/goose/v3/cmd/goose
+      - go build -o {{shellQuote .SQLC_BIN}} github.com/sqlc-dev/sqlc/cmd/sqlc
   fmt:
     cmds:
-      - buf format -w
-      - yamlfmt .
+      - "{{.BUF_BIN}} format -w"
+      - "{{.YAML_FMT_BIN}} ."
       - go fmt ./...
   lint:
     cmds:
-      - sqlc vet
-      - buf lint
+      - "{{.SQLC_BIN}} vet"
+      - "{{.BUF_BIN}} lint"
       # - golangci-lint run
   # build-go:
   #   cmds:
@@ -25,7 +36,7 @@ tasks:
   #     - task: build-go
   generate-db:
     cmds:
-      - sqlc generate
+      - "{{.SQLC_BIN}} generate"
     sources:
       - sqlc.yaml
       - database/sql/**/*.sql
@@ -33,7 +44,7 @@ tasks:
       - database/*.go
   generate-protobuf:
     cmds:
-      - buf generate
+      - "{{.BUF_BIN}} generate"
     sources:
       - buf.yaml
       - buf.gen.yaml
@@ -58,7 +69,10 @@ tasks:
       GOOSE_DBSTRING: "{{.POSTGRES_URI}}"
       GOOSE_MIGRATION_DIR: database/sql/schema
     cmds:
-      - goose {{.CLI_ARGS}}
+      - "{{.GOOSE_BIN}} {{.CLI_ARGS}}"
     requires:
       vars:
         - POSTGRES_URI
+  now:
+    cmds:
+      - echo {{now | date "2006-01-02T15:04:05Z07:00"}}

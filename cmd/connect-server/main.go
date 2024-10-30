@@ -24,7 +24,7 @@ var (
 )
 
 func main() {
-	logger := zerolog.New(os.Stdout).With().Timestamp().Logger()
+	logger := zerolog.New(os.Stdout).With().Timestamp().Str("bin", "connect-server").Logger()
 
 	logLevel := zerolog.InfoLevel
 
