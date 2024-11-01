@@ -7,8 +7,8 @@
 
 ## 24/10 tasks
 - Setup cli
-- Setup logger (zerolog)
-- Setup configuration (env and cli flags)
+✔ Setup logger (zerolog)
+✔ Setup configuration (env)
 ✔ - Setup postgres (pgx/v5)
 ✔ - Setup NATS (nats.go)
 - Realtime protocol on top of websocket
@@ -27,26 +27,22 @@
 - Github actions lint, format & diff, test
 - Setup e2e test
 - Auth middleware
-- CORS middleware
-- Git commit hash/release version integration ref- grafana & let's go further - partially done, automating with taskfile remains
+✔ CORS middleware
+- cors only in development: app_mode env variable
+✔ Git commit hash/release version integration ref- grafana & let's go further - partially done, automating with taskfile remains
 - Setup cspell
-- Setup docker
+✔ Setup docker
 - Live reload for generators and go build
-- Managing tools
+✔ Managing tools
 - Request validation
 - Seeding data
 - Document protobuf
 
 # 23/10-24/10  Non coding tasks
-- Figure out db schema for user and authentication
-- Auth and MFA flows
 - Learn about otel, metrics and logging
 - Grafana, logs, otel, prometheus
 - Checkout links in whatsapp
 
 
 ## TODO NOW AFTER BREAK
-- DOCKER GO BUILD CACHE AND MODULE DOWNLOAD CACHE VOLUME MOUNT
-- DOCKER COMPOSE WITH DB/NATS
-- ✔ SETUP CONFIG LOADING AND MANAGEMENT
 - SETUP TOKEN (NOT REQUIRED)

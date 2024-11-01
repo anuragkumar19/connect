@@ -45,3 +45,8 @@ CREATE TABLE
         "password_is_valid" BOOLEAN NOT NULL DEFAULT FALSE,
         "password_error_message" TEXT
     );
+
+-- +goose Down
+DROP TABLE "registration_flows";
+
+DROP TYPE "registration_flows_state";

@@ -73,11 +73,6 @@ func AllRegistrationFlowsStateValues() []RegistrationFlowsState {
 	}
 }
 
-type LoginFlow struct {
-	ID   int32
-	Name string
-}
-
 type RegistrationFlow struct {
 	ID                                           int64
 	CreatedAt                                    time.Time
