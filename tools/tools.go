@@ -1,7 +1,6 @@
 package tools
 
 import (
-	_ "github.com/air-verse/air"
 	_ "github.com/bufbuild/buf/cmd/buf"
 	_ "github.com/golangci/golangci-lint/cmd/golangci-lint"
 	_ "github.com/google/yamlfmt/cmd/yamlfmt"

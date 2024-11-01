@@ -7,7 +7,6 @@ vars:
     sh: "pwd"
   CONNECT_SERVER_BUILD_BIN: '{{joinPath .PWD "bin/connect-server" | toSlash}}{{exeExt}}'
   CONNECT_SERVER_DEV_BIN: '{{joinPath .PWD "tmp/connect-server" | toSlash}}{{exeExt}}'
-  AIR_BIN: '{{joinPath .PWD "tools/bin/air" | toSlash}}{{exeExt}}'
   BUF_BIN: '{{joinPath .PWD "tools/bin/buf" | toSlash}}{{exeExt}}'
   GOVULNCHECK_BIN: '{{joinPath .PWD "tools/bin/govulncheck" | toSlash}}{{exeExt}}'
   GOLANG_CI_LINT_BIN: '{{joinPath .PWD "tools/bin/golang-ci-lint" | toSlash}}{{exeExt}}'
@@ -19,7 +18,6 @@ tasks:
     dir: "tools"
     cmds:
       - go mod download
-      - go build -o {{shellQuote .AIR_BIN}} github.com/air-verse/air
       - go build -o {{shellQuote .BUF_BIN}} github.com/bufbuild/buf/cmd/buf
       - go build -o {{shellQuote .GOLANG_CI_LINT_BIN}} github.com/golangci/golangci-lint/cmd/golangci-lint
       - go build -o {{shellQuote .GOVULNCHECK_BIN}} golang.org/x/vuln/cmd/govulncheck
@@ -80,9 +78,6 @@ tasks:
       - dev-build
     cmds:
       - "{{.CONNECT_SERVER_DEV_BIN}}"
-  dev-run-watch:
-    cmds:
-      - air -c ./.config/air/dev-run.toml
   fmt-protobuf:
     cmds:
       - "{{.BUF_BIN}} format -w"
@@ -124,9 +119,6 @@ tasks:
       - database/sql/**/*.sql
     generates:
       - database/*.go
-  generate-sql-watch:
-    cmds:
-      - air -c ./.config/air/generate-sql.toml
   generate-protobuf:
     cmds:
       - "{{.BUF_BIN}} generate"
@@ -136,9 +128,6 @@ tasks:
       - api/proto/**/*
     generates:
       - api/gen/**/*.go
-  generate-protobuf-watch:
-    cmds:
-      - air -c ./.config/air/generate-protobuf.toml
   generate:
     cmds:
       - task: generate-sql
@@ -156,8 +145,3 @@ tasks:
   go-vuln-check:
     cmds:
       - "{{.GOVULNCHECK_BIN}} ./..."
-  dev:
-    deps:
-      - generate-sql-watch
-      - generate-protobuf-watch
-      - dev-run-watch
