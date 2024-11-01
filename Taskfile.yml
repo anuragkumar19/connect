@@ -7,6 +7,7 @@ vars:
     sh: "pwd"
   CONNECT_SERVER_BUILD_BIN: '{{joinPath .PWD "bin/connect-server" | toSlash}}{{exeExt}}'
   CONNECT_SERVER_DEV_BIN: '{{joinPath .PWD "tmp/connect-server" | toSlash}}{{exeExt}}'
+  AIR_BIN: '{{joinPath .PWD "tools/bin/air" | toSlash}}{{exeExt}}'
   BUF_BIN: '{{joinPath .PWD "tools/bin/buf" | toSlash}}{{exeExt}}'
   GOVULNCHECK_BIN: '{{joinPath .PWD "tools/bin/govulncheck" | toSlash}}{{exeExt}}'
   GOLANG_CI_LINT_BIN: '{{joinPath .PWD "tools/bin/golang-ci-lint" | toSlash}}{{exeExt}}'
@@ -14,17 +15,40 @@ vars:
   GOOSE_BIN: '{{joinPath .PWD "tools/bin/goose" | toSlash}}{{exeExt}}'
   SQLC_BIN: '{{joinPath .PWD "tools/bin/sqlc" | toSlash}}{{exeExt}}'
 tasks:
-  setup:
+  setup-tools:
     dir: "tools"
     cmds:
       - go mod download
+      - go build -o {{shellQuote .AIR_BIN}} github.com/air-verse/air
       - go build -o {{shellQuote .BUF_BIN}} github.com/bufbuild/buf/cmd/buf
       - go build -o {{shellQuote .GOLANG_CI_LINT_BIN}} github.com/golangci/golangci-lint/cmd/golangci-lint
       - go build -o {{shellQuote .GOVULNCHECK_BIN}} golang.org/x/vuln/cmd/govulncheck
       - go build -o {{shellQuote .YAML_FMT_BIN}} github.com/google/yamlfmt/cmd/yamlfmt
       - go build -o {{shellQuote .GOOSE_BIN}} github.com/pressly/goose/v3/cmd/goose
       - go build -o {{shellQuote .SQLC_BIN}} github.com/sqlc-dev/sqlc/cmd/sqlc
-  build-go:
+  infra-create:
+    cmds:
+      - "docker compose -f ./docker-compose-dev-required.yml create"
+  infra-up:
+    cmds:
+      - "docker compose -f ./docker-compose-dev-required.yml up -d"
+  infra-down:
+    cmds:
+      - "docker compose -f ./docker-compose-dev-required.yml down"
+  infra-start:
+    cmds:
+      - "docker compose -f ./docker-compose-dev-required.yml start"
+  infra-stop:
+    cmds:
+      - "docker compose -f ./docker-compose-dev-required.yml stop"
+  infra-restart:
+    cmds:
+      - "docker compose -f ./docker-compose-dev-required.yml restart"
+  setup:
+    deps:
+      - setup-tools
+      - infra-create
+  build:
     cmds:
       - 'go build -o {{shellQuote .CONNECT_SERVER_BUILD_BIN}} -ldflags="{{.LINKER_FLAG}}" ./cmd/connect-server'
       - "echo 'Successfully build: {{.CONNECT_SERVER_BUILD_BIN}}'"
@@ -40,7 +64,7 @@ tasks:
         sh: "git rev-parse --abbrev-ref HEAD"
       BRANCH: "{{trim .BRANCH_RAW}}"
       LINKER_FLAG: "-s -X main.version={{shellQuote .VERSION}} -X main.commit={{shellQuote .COMMIT_HASH}} -X main.buildBranch={{shellQuote .BRANCH}} -X main.buildStampRFC3339={{shellQuote .NOW}}"
-  dev-build-go:
+  dev-build:
     cmds:
       - "go build -o {{shellQuote .CONNECT_SERVER_DEV_BIN}} ./cmd/connect-server"
       - "echo 'Successfully build: {{.CONNECT_SERVER_DEV_BIN}}'"
@@ -48,13 +72,17 @@ tasks:
       - go.mod
       - go.sum
       - "**/*.go"
+      - exclude: "tools/**/*"
     generates:
       - "{{.CONNECT_SERVER_DEV_BIN}}"
-  dev-run-go:
+  dev-run:
     deps:
-      - dev-build-go
+      - dev-build
     cmds:
       - "{{.CONNECT_SERVER_DEV_BIN}}"
+  dev-run-watch:
+    cmds:
+      - air -c ./.config/air/dev-run.toml
   fmt-protobuf:
     cmds:
       - "{{.BUF_BIN}} format -w"
@@ -96,6 +124,9 @@ tasks:
       - database/sql/**/*.sql
     generates:
       - database/*.go
+  generate-sql-watch:
+    cmds:
+      - air -c ./.config/air/generate-sql.toml
   generate-protobuf:
     cmds:
       - "{{.BUF_BIN}} generate"
@@ -105,6 +136,9 @@ tasks:
       - api/proto/**/*
     generates:
       - api/gen/**/*.go
+  generate-protobuf-watch:
+    cmds:
+      - air -c ./.config/air/generate-protobuf.toml
   generate:
     cmds:
       - task: generate-sql
@@ -119,9 +153,11 @@ tasks:
     requires:
       vars:
         - POSTGRES_URI
-  now:
-    cmds:
-      - echo {{now | date "2006-01-02T15:04:05Z07:00"}}
   go-vuln-check:
     cmds:
       - "{{.GOVULNCHECK_BIN}} ./..."
+  dev:
+    deps:
+      - generate-sql-watch
+      - generate-protobuf-watch
+      - dev-run-watch

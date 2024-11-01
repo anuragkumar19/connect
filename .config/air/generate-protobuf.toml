@@ -1,0 +1,20 @@
+# Config file for [Air](https://github.com/air-verse/air) in TOML format
+root = "."
+tmp_dir = "tmp"
+
+[build]
+cmd = "echo 'Generating protobuf...'"
+full_bin = "task"
+args_bin = ["generate-protobuf"]
+include_ext = ["proto"]
+exclude_dir = ["tmp"]
+include_dir = ["api\\proto", "api/proto"]
+include_file = ["buf.yaml", "buf.gen.yaml"]
+exclude_unchanged = true
+follow_symlink = true
+log = "air.log"
+send_interrupt = true
+kill_delay = 500
+
+[log]
+main_only = true

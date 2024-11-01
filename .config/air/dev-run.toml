@@ -1,0 +1,19 @@
+# Config file for [Air](https://github.com/air-verse/air) in TOML format
+root = "."
+tmp_dir = "tmp"
+
+[build]
+cmd = "echo 'Building...'"
+full_bin = "task"
+args_bin = ["dev-run"]
+include_ext = ["go"]
+exclude_dir = ["tools", "tmp"]
+exclude_regex = ["_test\\.go"]
+exclude_unchanged = true
+follow_symlink = true
+log = "air.log"
+send_interrupt = true
+kill_delay = 0
+
+[log]
+main_only = true
