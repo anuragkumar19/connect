@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/anuragkumar19/connect/api"
@@ -12,6 +14,7 @@ import (
 	"github.com/anuragkumar19/connect/infra/postgres"
 	"github.com/anuragkumar19/connect/infra/smtp"
 	"github.com/anuragkumar19/connect/infra/storage"
+	"github.com/anuragkumar19/connect/server"
 	"github.com/rs/zerolog"
 	"go.uber.org/automaxprocs/maxprocs"
 )
@@ -55,7 +58,9 @@ func main() {
 		logger.Info().Msg(str)
 	}))
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctxBase, cancelBase := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancelBase()
+	ctx, cancel := signal.NotifyContext(ctxBase, syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
 	pgConfig, err := postgres.AutoConfig()
@@ -100,9 +105,35 @@ func main() {
 
 	database := database.New(pgConn)
 
-	server := api.NewServer(&logger, database, &natsConn, &storageClient, &smtpClient)
+	api := api.New(&logger, database, &natsConn, &storageClient, &smtpClient)
 
-	if err := server.Serve(); err != nil {
-		logger.Fatal().Err(err).Send()
+	serverCfg, err := server.AutoConfig()
+	if err != nil {
+		logger.Fatal().Err(err).Msg("failed to parse server config")
+	}
+	server := server.New(serverCfg, &logger)
+
+	if err := server.Mount("/api", api.Router()); err != nil {
+		logger.Fatal().Err(err).Msg("failed to mount api router to server")
+	}
+
+	go func() {
+		if err := server.Start(); err != nil {
+			logger.Fatal().Err(err).Msg("")
+		}
+	}()
+
+	signalCh := make(chan os.Signal, 1)
+	signal.Notify(signalCh, syscall.SIGINT, syscall.SIGTERM)
+
+	sig := <-signalCh
+	logger.Info().Str("signal", sig.String()).Msg("signal received shutting down servers")
+
+	shutDownCtxBase, shutdownCancelBase := context.WithTimeout(context.Background(), 20*time.Second)
+	defer shutdownCancelBase()
+	shutDownCtx, shutdownCancel := signal.NotifyContext(shutDownCtxBase, syscall.SIGINT, syscall.SIGTERM)
+	defer shutdownCancel()
+	if err := server.Shutdown(shutDownCtx); err != nil {
+		logger.Fatal().Err(err).Msg("failed to shutdown server")
 	}
 }

@@ -12,50 +12,47 @@ import (
 	"github.com/anuragkumar19/connect/infra/nats"
 	"github.com/anuragkumar19/connect/infra/smtp"
 	"github.com/anuragkumar19/connect/infra/storage"
+	"github.com/go-chi/chi/v5"
 	"github.com/rs/cors"
 	"github.com/rs/zerolog"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 )
 
-type HTTPServer struct {
-	registrationService  *registration.Service
-	loginService         *login.Service
-	passwordResetService *passwordreset.Service
+type Api struct {
+	registrationService  authv1connect.RegistrationServiceHandler
+	loginService         authv1connect.LoginServiceHandler
+	passwordResetService authv1connect.PasswordResetServiceHandler
 }
 
-func NewServer(logger *zerolog.Logger, db *database.Queries, nt *nats.NATS, s *storage.Storage, mailerClient *smtp.SMTP) HTTPServer {
+func New(logger *zerolog.Logger, db *database.Queries, nt *nats.NATS, s *storage.Storage, mailerClient *smtp.SMTP) Api {
 	registrationService := registration.New(logger)
 	loginService := login.New(logger)
-	passwordService := passwordreset.New(logger)
+	passwordResetService := passwordreset.New(logger)
 
-	return HTTPServer{
+	return Api{
 		registrationService:  &registrationService,
 		loginService:         &loginService,
-		passwordResetService: &passwordService,
+		passwordResetService: &passwordResetService,
 	}
 }
 
-func (s *HTTPServer) Serve() error {
-	api := http.NewServeMux()
+func (api *Api) Router() chi.Router {
+	r := chi.NewRouter()
+	r.Use(withCORS)
+
 	{
-		path, handler := authv1connect.NewRegistrationServiceHandler(s.registrationService)
-		api.Handle(path, handler)
+		path, handler := authv1connect.NewRegistrationServiceHandler(api.registrationService)
+		r.Handle(chiPath(path), handler)
 	}
 	{
-		path, handler := authv1connect.NewLoginServiceHandler(s.loginService)
-		api.Handle(path, handler)
+		path, handler := authv1connect.NewLoginServiceHandler(api.loginService)
+		r.Handle(chiPath(path), handler)
 	}
 	{
-		path, handler := authv1connect.NewPasswordResetServiceHandler(s.passwordResetService)
-		api.Handle(path, handler)
+		path, handler := authv1connect.NewPasswordResetServiceHandler(api.passwordResetService)
+		r.Handle(chiPath(path), handler)
 	}
 
-	mux := http.NewServeMux()
-
-	mux.Handle("/api/", http.StripPrefix("/api", api))
-
-	return http.ListenAndServe("localhost:8080", h2c.NewHandler(withCORS(mux), &http2.Server{}))
+	return r
 }
 
 // withCORS adds CORS support to a Connect HTTP handler.
@@ -67,4 +64,8 @@ func withCORS(h http.Handler) http.Handler {
 		ExposedHeaders: connectcors.ExposedHeaders(),
 	})
 	return middleware.Handler(h)
+}
+
+func chiPath(s string) string {
+	return s + "*"
 }
