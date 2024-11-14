@@ -14,6 +14,7 @@ import (
 	"github.com/anuragkumar19/connect/infra/postgres"
 	"github.com/anuragkumar19/connect/infra/smtp"
 	"github.com/anuragkumar19/connect/infra/storage"
+	"github.com/anuragkumar19/connect/mailer"
 	"github.com/anuragkumar19/connect/server"
 	"github.com/rs/zerolog"
 	"go.uber.org/automaxprocs/maxprocs"
@@ -111,7 +112,10 @@ func main() {
 	if err != nil {
 		logger.Fatal().Err(err).Msg("failed to parse server config")
 	}
-	server := server.New(serverCfg, &logger)
+	server, err := server.New(serverCfg, &logger)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("failed to create server")
+	}
 
 	if err := server.Mount("/api", api.Router()); err != nil {
 		logger.Fatal().Err(err).Msg("failed to mount api router to server")
@@ -119,6 +123,20 @@ func main() {
 
 	go func() {
 		if err := server.Start(); err != nil {
+			logger.Fatal().Err(err).Msg("")
+		}
+	}()
+
+	mailerServerCfg, err := mailer.AutoConfig()
+	if err != nil {
+		logger.Fatal().Err(err).Msg("failed to parse mailerServer config")
+	}
+	mailerServer, err := mailer.NewServer(ctx, mailerServerCfg, &logger, &smtpClient, &natsConn)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("failed to create mailer server")
+	}
+	go func() {
+		if err := mailerServer.Start(); err != nil {
 			logger.Fatal().Err(err).Msg("")
 		}
 	}()
@@ -135,5 +153,8 @@ func main() {
 	defer shutdownCancel()
 	if err := server.Shutdown(shutDownCtx); err != nil {
 		logger.Fatal().Err(err).Msg("failed to shutdown server")
+	}
+	if err := mailerServer.Shutdown(shutDownCtx); err != nil {
+		logger.Fatal().Err(err).Msg("failed to mailer shutdown server")
 	}
 }

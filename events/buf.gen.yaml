@@ -1,0 +1,17 @@
+version: v2
+clean: true
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: github.com/anuragkumar19/connect/api/gen
+plugins:
+  - remote: buf.build/protocolbuffers/go
+    out: events/gen
+    opt: paths=source_relative
+# - remote: buf.build/connectrpc/go
+#   out: events/gen
+#   opt: paths=source_relative
+
+inputs:
+  - directory: events/proto

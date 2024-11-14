@@ -3,6 +3,8 @@ version: v2
 modules:
   - path: api/proto
     name: buf.build/anurag19/connect
+  - path: events/proto
+    name: buf.build/anurag19/connect-events
 lint:
   use:
     - STANDARD

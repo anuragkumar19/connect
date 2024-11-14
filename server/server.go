@@ -16,7 +16,7 @@ import (
 )
 
 var ErrServerNotStarted = errors.New("server already started")
-var ErrServerAlreadyStarted = errors.New("server already started")
+var ErrServerAlreadyStarted = errors.New("server not started")
 
 type Server struct {
 	mutex  sync.Mutex
@@ -26,17 +26,20 @@ type Server struct {
 	router *chi.Mux
 }
 
-func New(config *Config, logger *zerolog.Logger) *Server {
+func New(config *Config, logger *zerolog.Logger) (Server, error) {
+	if err := config.Validate(); err != nil {
+		return Server{}, fmt.Errorf("invalid server config: %w", err)
+	}
 	r := chi.NewRouter()
 
 	r.Use(recoverer(logger))
 	r.Use(middleware.Timeout(config.HandlerTimeout))
 
-	return &Server{
+	return Server{
 		config: config,
 		logger: logger,
 		router: r,
-	}
+	}, nil
 }
 
 func (s *Server) Start() error {

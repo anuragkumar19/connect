@@ -119,19 +119,29 @@ tasks:
       - database/sql/**/*.sql
     generates:
       - database/*.go
-  generate-protobuf:
+  generate-api:
     cmds:
-      - "{{.BUF_BIN}} generate"
+      - "{{.BUF_BIN}} generate --template ./api/buf.gen.yaml"
     sources:
       - buf.yaml
-      - buf.gen.yaml
+      - api/buf.gen.yaml
       - api/proto/**/*
     generates:
       - api/gen/**/*.go
+  generate-events:
+    cmds:
+      - "{{.BUF_BIN}} generate --template ./events/buf.gen.yaml"
+    sources:
+      - buf.yaml
+      - events/buf.gen.yaml
+      - events/proto/**/*
+    generates:
+      - events/gen/**/*.go
   generate:
     cmds:
       - task: generate-sql
-      - task: generate-protobuf
+      - task: generate-api
+      - task: generate-events
   migrate:
     env:
       GOOSE_DRIVER: postgres
