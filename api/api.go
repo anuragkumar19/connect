@@ -23,8 +23,8 @@ type Api struct {
 	passwordResetService authv1connect.PasswordResetServiceHandler
 }
 
-func New(logger *zerolog.Logger, db *database.Queries, nt *nats.NATS, s *storage.Storage, mailerClient *smtp.SMTP) Api {
-	registrationService := registration.New(logger)
+func New(logger *zerolog.Logger, store *database.Queries, nt *nats.NATS, s *storage.Storage, mailerClient *smtp.SMTP) Api {
+	registrationService := registration.New(logger, store)
 	loginService := login.New(logger)
 	passwordResetService := passwordreset.New(logger)
 

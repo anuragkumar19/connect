@@ -13,8 +13,9 @@ type Service struct {
 
 var _ authv1connect.RegistrationServiceHandler = (*Service)(nil)
 
-func New(logger *zerolog.Logger) Service {
+func New(logger *zerolog.Logger, store *database.Queries) Service {
 	return Service{
 		logger: logger,
+		store:  store,
 	}
 }

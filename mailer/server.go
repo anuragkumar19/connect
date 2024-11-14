@@ -51,6 +51,11 @@ func NewServer(ctx context.Context, config *Config, logger *zerolog.Logger, s *s
 	}
 
 	// May cause backward compatibility problems. More investigation needed
+	/* From NATS docs:
+	Add a stream. Adding a stream is an idempotent function, which means that if a stream does not exist,
+	it will be created, and if a stream already exists,
+	then the add operation will succeed only if the existing stream matches exactly the attributes specified in the 'add' call.
+	*/
 	if _, err := js.CreateOrUpdateStream(ctx, jetstream.StreamConfig{
 		Name:        mailerJobsStreamName,
 		Description: "Jobs for sending emails",
@@ -63,6 +68,8 @@ func NewServer(ctx context.Context, config *Config, logger *zerolog.Logger, s *s
 	}
 
 	// May cause backward compatibility problems. More investigation needed
+	/* Docs: Durable consumers as the name implies are meant to last 'forever' and are typically created and deleted administratively
+	rather than by the application code which only needs to specify the durable's well known name to use it. */
 	sendEmailConsumer, err := js.CreateOrUpdateConsumer(ctx, mailerJobsStreamName, jetstream.ConsumerConfig{
 		Name:        sendEmailConsumerName,
 		Durable:     sendEmailConsumerName,
@@ -103,7 +110,7 @@ func (s *Server) Start() error {
 		g.Go(func() error {
 			c, err := s.sendEmailConsumer.Consume(s.consumeHandler, jetstream.PullMaxMessages(1))
 			if err != nil {
-				return fmt.Errorf("failed to consume from consumer: %v", err)
+				return fmt.Errorf("failed to consume messages from consumer: %w", err)
 			}
 			s.mutex.Lock()
 			s.consumers = append(s.consumers, c)
@@ -144,6 +151,14 @@ func (s *Server) Shutdown(ctx context.Context) error {
 }
 
 func (s *Server) consumeHandler(msg jetstream.Msg) {
+	/*
+		FROM docs:
+		After a message is sent from the consumer to a subscribing client application by the server an 'AckWait' timer is started.
+		This timer is deleted when either a positive (Ack()) or a termination (Term()) acknowledgement is received from the client application.
+		The timer gets reset upon reception of an in-progress (inProgress()) acknowledgement.
+	*/
+	// TODO: use msg.InProgress() for controlling timeouts and ackWait reset
+
 	defer func() {
 		if v := recover(); v != nil {
 			s.logger.Error().Str("stack", string(debug.Stack())).Err(fmt.Errorf("mailer consume handler panicked: %v", v)).Msg("panicked recovered")
@@ -152,8 +167,8 @@ func (s *Server) consumeHandler(msg jetstream.Msg) {
 	// TODO: use context with timeout = AckWait
 	meta, err := msg.Metadata()
 	if err != nil {
-		if err := msg.Nak(); err != nil {
-			s.logger.Error().Err(err).Msg("failed to nack msg")
+		if err := msg.TermWithReason("failed to get metadata from message"); err != nil {
+			s.logger.Error().Err(err).Msg("failed to terminate msg")
 			return
 		}
 		s.logger.Error().Err(err).Msg("failed to retrieve metadata from nats message")
@@ -166,7 +181,10 @@ func (s *Server) consumeHandler(msg jetstream.Msg) {
 
 	var sendEmailMsg mailerv1.SendEmail
 	if err := proto.Unmarshal(msg.Data(), &sendEmailMsg); err != nil {
-		msg.Nak()
+		if err := msg.TermWithReason(fmt.Sprintf("failed to parse data into expected format: %s", err.Error())); err != nil {
+			s.logger.Error().Err(err).Msg("failed to terminate msg")
+			return
+		}
 		l.Error().Err(err).Msg("failed to parse data into expected format")
 		return
 	}
@@ -174,7 +192,7 @@ func (s *Server) consumeHandler(msg jetstream.Msg) {
 	l.Info().Msg("sending email")
 	if err := s.sendMail(&sendEmailMsg); err != nil {
 		if err := msg.Nak(); err != nil {
-			l.Error().Err(err).Msg("failed to nack msg")
+			l.Error().Err(err).Msg("failed to nak msg")
 			return
 		}
 		l.Error().Err(err).Msg("failed to send email")
@@ -182,7 +200,7 @@ func (s *Server) consumeHandler(msg jetstream.Msg) {
 	}
 	if err := msg.DoubleAck(context.Background()); err != nil {
 		if err := msg.Nak(); err != nil {
-			l.Error().Err(err).Msg("failed to nack msg")
+			l.Error().Err(err).Msg("failed to nak msg")
 			return
 		}
 		l.Error().Err(err).Msg("failed to ack msg")
@@ -192,7 +210,7 @@ func (s *Server) consumeHandler(msg jetstream.Msg) {
 }
 
 func (s *Server) sendMail(msg *mailerv1.SendEmail) error {
-	// TODO: different "from" field of email based on email type
+	// TODO: different "from" field of email based on email type, attachment support
 	mailMsg := gomail.NewMessage()
 
 	mailMsg.SetAddressHeader("From", s.config.FromAddress, s.config.FromDisplayName)

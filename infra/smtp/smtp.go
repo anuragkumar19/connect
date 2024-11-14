@@ -18,8 +18,12 @@ func New(ctx context.Context, config *Config, logger *zerolog.Logger) (SMTP, err
 	}
 
 	dialer := gomail.NewDialer(config.Host, config.Port, config.Username, config.Password)
-	if _, err := dialer.Dial(); err != nil {
+	sc, err := dialer.Dial()
+	if err != nil {
 		return SMTP{}, fmt.Errorf("failed to authenticate with smtp server: %w", err)
+	}
+	if err := sc.Close(); err != nil {
+		return SMTP{}, fmt.Errorf("failed to close smtp conn: %w", err)
 	}
 
 	logger.Info().Msg("smtp auth successful")

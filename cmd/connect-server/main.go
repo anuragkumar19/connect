@@ -157,4 +157,9 @@ func main() {
 	if err := mailerServer.Shutdown(shutDownCtx); err != nil {
 		logger.Fatal().Err(err).Msg("failed to mailer shutdown server")
 	}
+
+	pgConn.Close()
+	if err := natsConn.DrainAndWaitForClose(shutDownCtx); err != nil {
+		logger.Fatal().Err(err).Msg("failed to drain and close nats conn")
+	}
 }

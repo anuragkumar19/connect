@@ -12,7 +12,8 @@
 ✔ - Setup postgres (pgx/v5)
 ✔ - Setup NATS (nats.go)
 - Realtime protocol on top of websocket
-- Events and event schema generated from protobuf definition
+✔ Events and event schema generated from protobuf definition
+NATS and jetstream client(pub-sub, work-queue, kv) generation from protobuf definition
 ✔ - Setup storage (minio/v7)
 - Create db tables and views
 ✔ - Setup mailer and consumer (smtp)
@@ -21,7 +22,7 @@
 - Custom error handler to prevent sending backend error messages to the client
 - Interceptors
 - Caching
-- Setup connectRPC h2c server
+✔ Setup connectRPC h2c server
 - Startup Context and graceful shutdown, signals, GenServer interface, run server, monitor and restart, listen to os signals and terminate
 - Gocilint
 - Github actions lint, format & diff, test
@@ -32,11 +33,11 @@
 ✔ Git commit hash/release version integration ref- grafana & let's go further - partially done, automating with taskfile remains
 - Setup cspell
 ✔ Setup docker
-- Live reload for generators and go build
 ✔ Managing tools
 - Request validation
 - Seeding data
 - Document protobuf
+- Logger and different pkg from with logging is being done
 
 # 23/10-24/10  Non coding tasks
 - Learn about otel, metrics and logging
