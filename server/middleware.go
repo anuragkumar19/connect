@@ -19,7 +19,7 @@ func recoverer(logger *zerolog.Logger) func(http.Handler) http.Handler {
 						panic(rvr)
 					}
 
-					logger.Panic().Str("stack", string(debug.Stack())).Err(fmt.Errorf("handler panicked with value: %v", rvr)).Msg("panic recovered")
+					logger.Error().Str("stack", string(debug.Stack())).Err(fmt.Errorf("handler panicked with value: %v", rvr)).Msg("panic recovered")
 					if r.Header.Get("Connection") != "Upgrade" {
 						w.WriteHeader(http.StatusInternalServerError)
 					}

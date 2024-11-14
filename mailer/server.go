@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -61,6 +62,7 @@ func NewServer(ctx context.Context, config *Config, logger *zerolog.Logger, s *s
 		return Server{}, fmt.Errorf("failed to create or update stream: %w", err)
 	}
 
+	// May cause backward compatibility problems. More investigation needed
 	sendEmailConsumer, err := js.CreateOrUpdateConsumer(ctx, mailerJobsStreamName, jetstream.ConsumerConfig{
 		Name:        sendEmailConsumerName,
 		Durable:     sendEmailConsumerName,
@@ -142,6 +144,11 @@ func (s *Server) Shutdown(ctx context.Context) error {
 }
 
 func (s *Server) consumeHandler(msg jetstream.Msg) {
+	defer func() {
+		if v := recover(); v != nil {
+			s.logger.Error().Str("stack", string(debug.Stack())).Err(fmt.Errorf("mailer consume handler panicked: %v", v)).Msg("panicked recovered")
+		}
+	}()
 	// TODO: use context with timeout = AckWait
 	meta, err := msg.Metadata()
 	if err != nil {
