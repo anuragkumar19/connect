@@ -1,17 +1,14 @@
 package server
 
 import (
-	"github.com/rs/zerolog"
+	stdlog "log"
+
+	"github.com/rs/zerolog/log"
 )
 
-type errorLogWriter struct {
-	logger *zerolog.Logger
-}
+var httpErrorLogger = stdlog.New(&errorLogWriter{}, "", 0)
 
-func newErrorLogWriter(logger *zerolog.Logger) *errorLogWriter {
-	return &errorLogWriter{
-		logger: logger,
-	}
+type errorLogWriter struct {
 }
 
 func (w *errorLogWriter) Write(p []byte) (n int, err error) {
@@ -20,6 +17,6 @@ func (w *errorLogWriter) Write(p []byte) (n int, err error) {
 		// Trim CR added by stdlog.
 		p = p[0 : n-1]
 	}
-	w.logger.Error().Err(err).Msg(string(p))
+	log.Error().Err(err).Msg(string(p))
 	return
 }

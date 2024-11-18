@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"gopkg.in/gomail.v2"
 )
 
@@ -12,7 +12,7 @@ type SMTP struct {
 	*gomail.Dialer
 }
 
-func New(ctx context.Context, config *Config, logger *zerolog.Logger) (SMTP, error) {
+func New(ctx context.Context, config *Config) (SMTP, error) {
 	if err := config.Validate(); err != nil {
 		return SMTP{}, fmt.Errorf("smtp config validation failed: %w", err)
 	}
@@ -26,7 +26,7 @@ func New(ctx context.Context, config *Config, logger *zerolog.Logger) (SMTP, err
 		return SMTP{}, fmt.Errorf("failed to close smtp conn: %w", err)
 	}
 
-	logger.Info().Msg("smtp auth successful")
+	log.Info().Msg("smtp auth successful")
 
 	return SMTP{
 		Dialer: dialer,

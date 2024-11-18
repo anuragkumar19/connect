@@ -5,14 +5,14 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 type Postgres struct {
 	*pgxpool.Pool
 }
 
-func New(ctx context.Context, config *Config, logger *zerolog.Logger) (Postgres, error) {
+func New(ctx context.Context, config *Config) (Postgres, error) {
 	if err := config.Validate(); err != nil {
 		return Postgres{}, fmt.Errorf("invalid postgres config: %w", err)
 	}
@@ -38,7 +38,7 @@ func New(ctx context.Context, config *Config, logger *zerolog.Logger) (Postgres,
 		return Postgres{}, fmt.Errorf("failed to ping postgres: %w", err)
 	}
 
-	logger.Info().Msg("connected to postgres")
+	log.Info().Msg("connected to postgres")
 
 	return Postgres{Pool: dbPool}, nil
 }

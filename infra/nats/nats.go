@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/nats-io/nats.go"
-	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 type NATS struct {
@@ -14,7 +14,7 @@ type NATS struct {
 	closeCh chan struct{}
 }
 
-func New(ctx context.Context, config *Config, logger *zerolog.Logger) (NATS, error) {
+func New(ctx context.Context, config *Config) (NATS, error) {
 	if err := config.Validate(); err != nil {
 		return NATS{}, fmt.Errorf("invalid nats config: %w", err)
 	}
@@ -34,7 +34,7 @@ func New(ctx context.Context, config *Config, logger *zerolog.Logger) (NATS, err
 		return NATS{}, fmt.Errorf("failed to connect to nats servers: %w", err)
 	}
 
-	logger.Info().Msg("connected to nats servers")
+	log.Info().Msg("connected to nats servers")
 
 	return NATS{
 		Conn:    nc,

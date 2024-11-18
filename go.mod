@@ -6,6 +6,7 @@ require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.35.2-20240920164238-5a7b106cbb87.1
 	connectrpc.com/connect v1.17.0
 	connectrpc.com/cors v0.1.0
+	github.com/DataDog/gostackparse v0.7.0
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/jackc/pgx/v5 v5.7.1

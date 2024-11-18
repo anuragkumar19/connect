@@ -16,8 +16,9 @@ import (
 	mailerv1 "github.com/anuragkumar19/connect/events/gen/mailer/v1"
 	"github.com/anuragkumar19/connect/infra/nats"
 	"github.com/anuragkumar19/connect/infra/smtp"
+	"github.com/anuragkumar19/connect/stacktrace"
 	"github.com/nats-io/nats.go/jetstream"
-	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 var ErrServerNotStarted = errors.New("server already started")
@@ -33,7 +34,6 @@ var (
 type Server struct {
 	mutex             sync.Mutex
 	config            *Config
-	logger            *zerolog.Logger
 	smtp              *smtp.SMTP
 	js                jetstream.JetStream
 	sendEmailConsumer jetstream.Consumer
@@ -41,7 +41,7 @@ type Server struct {
 	consumers []jetstream.ConsumeContext
 }
 
-func NewServer(ctx context.Context, config *Config, logger *zerolog.Logger, s *smtp.SMTP, nc *nats.NATS) (Server, error) {
+func NewServer(ctx context.Context, config *Config, s *smtp.SMTP, nc *nats.NATS) (Server, error) {
 	if err := config.Validate(); err != nil {
 		return Server{}, fmt.Errorf("invalid mailer config: %w", err)
 	}
@@ -89,7 +89,6 @@ func NewServer(ctx context.Context, config *Config, logger *zerolog.Logger, s *s
 
 	return Server{
 		config:            config,
-		logger:            logger,
 		smtp:              s,
 		js:                js,
 		sendEmailConsumer: sendEmailConsumer,
@@ -105,7 +104,7 @@ func (s *Server) Start() error {
 	s.mutex.Unlock()
 	g := errgroup.Group{}
 
-	s.logger.Info().Int("count", s.config.Concurrency).Msg("staring workers")
+	log.Info().Int("count", s.config.Concurrency).Msg("staring workers")
 	for range s.config.Concurrency {
 		g.Go(func() error {
 			c, err := s.sendEmailConsumer.Consume(s.consumeHandler, jetstream.PullMaxMessages(1))
@@ -122,7 +121,7 @@ func (s *Server) Start() error {
 		return err
 	}
 
-	s.logger.Info().Msg("consumer workers started")
+	log.Info().Msg("consumer workers started")
 	return nil
 }
 
@@ -161,28 +160,28 @@ func (s *Server) consumeHandler(msg jetstream.Msg) {
 
 	defer func() {
 		if v := recover(); v != nil {
-			s.logger.Error().Str("stack", string(debug.Stack())).Err(fmt.Errorf("mailer consume handler panicked: %v", v)).Msg("panicked recovered")
+			log.Error().RawJSON("stack", stacktrace.Marshal(debug.Stack())).Err(fmt.Errorf("mailer consume handler panicked: %v", v)).Msg("panicked recovered")
 		}
 	}()
 	// TODO: use context with timeout = AckWait
 	meta, err := msg.Metadata()
 	if err != nil {
 		if err := msg.TermWithReason("failed to get metadata from message"); err != nil {
-			s.logger.Error().Err(err).Msg("failed to terminate msg")
+			log.Error().Err(err).Msg("failed to terminate msg")
 			return
 		}
-		s.logger.Error().Err(err).Msg("failed to retrieve metadata from nats message")
+		log.Error().Err(err).Msg("failed to retrieve metadata from nats message")
 		return
 	}
 
-	l := s.logger.With().Uint64("stream_sequence", meta.Sequence.Stream).Uint64("consumer_sequence", meta.Sequence.Consumer).Str("domain", meta.Domain).Logger()
+	l := log.With().Uint64("stream_sequence", meta.Sequence.Stream).Uint64("consumer_sequence", meta.Sequence.Consumer).Str("domain", meta.Domain).Logger()
 
 	l.Info().Msg("message received")
 
 	var sendEmailMsg mailerv1.SendEmail
 	if err := proto.Unmarshal(msg.Data(), &sendEmailMsg); err != nil {
 		if err := msg.TermWithReason(fmt.Sprintf("failed to parse data into expected format: %s", err.Error())); err != nil {
-			s.logger.Error().Err(err).Msg("failed to terminate msg")
+			log.Error().Err(err).Msg("failed to terminate msg")
 			return
 		}
 		l.Error().Err(err).Msg("failed to parse data into expected format")

@@ -6,14 +6,14 @@ import (
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 type Storage struct {
 	*minio.Client
 }
 
-func New(ctx context.Context, config *Config, logger *zerolog.Logger) (Storage, error) {
+func New(ctx context.Context, config *Config) (Storage, error) {
 	if err := config.Validate(); err != nil {
 		return Storage{}, fmt.Errorf("invalid storage config: %w", err)
 	}
@@ -31,7 +31,7 @@ func New(ctx context.Context, config *Config, logger *zerolog.Logger) (Storage, 
 		return Storage{}, fmt.Errorf("failed to list buckets from storage: %w", err)
 	}
 
-	logger.Info().Msg("successfully authenticated with storage server")
+	log.Info().Msg("successfully authenticated with storage server")
 
 	return Storage{
 		Client: client,

@@ -10,13 +10,12 @@ import (
 	"github.com/anuragkumar19/connect/infra/storage"
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/cors"
-	"github.com/rs/zerolog"
 )
 
 type Api struct {
 }
 
-func New(logger *zerolog.Logger, queries *database.Queries, nt *nats.NATS, s *storage.Storage, mailerClient *smtp.SMTP) Api {
+func New(queries *database.Queries, nt *nats.NATS, s *storage.Storage, mailerClient *smtp.SMTP) Api {
 	return Api{}
 }
 
