@@ -1,6 +1,6 @@
 # Connect
 
-## Go tools required :- task, buf, sqlc, google/yamlfmt
+## Go tools required :- task
 
 ## Todo
 - SQL formatter

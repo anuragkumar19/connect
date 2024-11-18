@@ -4,10 +4,6 @@ import (
 	"net/http"
 
 	connectcors "connectrpc.com/cors"
-	"github.com/anuragkumar19/connect/api/gen/auth/v1/authv1connect"
-	"github.com/anuragkumar19/connect/api/services/auth/login"
-	"github.com/anuragkumar19/connect/api/services/auth/passwordreset"
-	"github.com/anuragkumar19/connect/api/services/auth/registration"
 	"github.com/anuragkumar19/connect/database"
 	"github.com/anuragkumar19/connect/infra/nats"
 	"github.com/anuragkumar19/connect/infra/smtp"
@@ -18,39 +14,15 @@ import (
 )
 
 type Api struct {
-	registrationService  authv1connect.RegistrationServiceHandler
-	loginService         authv1connect.LoginServiceHandler
-	passwordResetService authv1connect.PasswordResetServiceHandler
 }
 
-func New(logger *zerolog.Logger, store *database.Queries, nt *nats.NATS, s *storage.Storage, mailerClient *smtp.SMTP) Api {
-	registrationService := registration.New(logger, store)
-	loginService := login.New(logger)
-	passwordResetService := passwordreset.New(logger)
-
-	return Api{
-		registrationService:  &registrationService,
-		loginService:         &loginService,
-		passwordResetService: &passwordResetService,
-	}
+func New(logger *zerolog.Logger, queries *database.Queries, nt *nats.NATS, s *storage.Storage, mailerClient *smtp.SMTP) Api {
+	return Api{}
 }
 
 func (api *Api) Router() chi.Router {
 	r := chi.NewRouter()
 	r.Use(withCORS)
-
-	{
-		path, handler := authv1connect.NewRegistrationServiceHandler(api.registrationService)
-		r.Handle(chiPath(path), handler)
-	}
-	{
-		path, handler := authv1connect.NewLoginServiceHandler(api.loginService)
-		r.Handle(chiPath(path), handler)
-	}
-	{
-		path, handler := authv1connect.NewPasswordResetServiceHandler(api.passwordResetService)
-		r.Handle(chiPath(path), handler)
-	}
 
 	return r
 }
@@ -66,6 +38,6 @@ func withCORS(h http.Handler) http.Handler {
 	return middleware.Handler(h)
 }
 
-func chiPath(s string) string {
-	return s + "*"
-}
+// func chiPath(s string) string {
+// 	return s + "*"
+// }

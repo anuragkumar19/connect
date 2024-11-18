@@ -33,35 +33,33 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// RegistrationServiceCreateRegistrationFlowProcedure is the fully-qualified name of the
-	// RegistrationService's CreateRegistrationFlow RPC.
-	RegistrationServiceCreateRegistrationFlowProcedure = "/auth.v1.RegistrationService/CreateRegistrationFlow"
-	// RegistrationServiceUpdateRegistrationFlowProcedure is the fully-qualified name of the
-	// RegistrationService's UpdateRegistrationFlow RPC.
-	RegistrationServiceUpdateRegistrationFlowProcedure = "/auth.v1.RegistrationService/UpdateRegistrationFlow"
-	// RegistrationServiceDeleteRegistrationFlowProcedure is the fully-qualified name of the
-	// RegistrationService's DeleteRegistrationFlow RPC.
-	RegistrationServiceDeleteRegistrationFlowProcedure = "/auth.v1.RegistrationService/DeleteRegistrationFlow"
-	// RegistrationServiceCompleteRegistrationFlowProcedure is the fully-qualified name of the
-	// RegistrationService's CompleteRegistrationFlow RPC.
-	RegistrationServiceCompleteRegistrationFlowProcedure = "/auth.v1.RegistrationService/CompleteRegistrationFlow"
+	// RegistrationServiceRegisterProcedure is the fully-qualified name of the RegistrationService's
+	// Register RPC.
+	RegistrationServiceRegisterProcedure = "/auth.v1.RegistrationService/Register"
+	// RegistrationServiceResendCodeProcedure is the fully-qualified name of the RegistrationService's
+	// ResendCode RPC.
+	RegistrationServiceResendCodeProcedure = "/auth.v1.RegistrationService/ResendCode"
+	// RegistrationServiceVerifyProcedure is the fully-qualified name of the RegistrationService's
+	// Verify RPC.
+	RegistrationServiceVerifyProcedure = "/auth.v1.RegistrationService/Verify"
 )
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
 var (
-	registrationServiceServiceDescriptor                        = v1.File_auth_v1_registration_service_proto.Services().ByName("RegistrationService")
-	registrationServiceCreateRegistrationFlowMethodDescriptor   = registrationServiceServiceDescriptor.Methods().ByName("CreateRegistrationFlow")
-	registrationServiceUpdateRegistrationFlowMethodDescriptor   = registrationServiceServiceDescriptor.Methods().ByName("UpdateRegistrationFlow")
-	registrationServiceDeleteRegistrationFlowMethodDescriptor   = registrationServiceServiceDescriptor.Methods().ByName("DeleteRegistrationFlow")
-	registrationServiceCompleteRegistrationFlowMethodDescriptor = registrationServiceServiceDescriptor.Methods().ByName("CompleteRegistrationFlow")
+	registrationServiceServiceDescriptor          = v1.File_auth_v1_registration_service_proto.Services().ByName("RegistrationService")
+	registrationServiceRegisterMethodDescriptor   = registrationServiceServiceDescriptor.Methods().ByName("Register")
+	registrationServiceResendCodeMethodDescriptor = registrationServiceServiceDescriptor.Methods().ByName("ResendCode")
+	registrationServiceVerifyMethodDescriptor     = registrationServiceServiceDescriptor.Methods().ByName("Verify")
 )
 
 // RegistrationServiceClient is a client for the auth.v1.RegistrationService service.
 type RegistrationServiceClient interface {
-	CreateRegistrationFlow(context.Context, *connect.Request[v1.CreateRegistrationFlowRequest]) (*connect.Response[v1.CreateRegistrationFlowResponse], error)
-	UpdateRegistrationFlow(context.Context, *connect.Request[v1.UpdateRegistrationFlowRequest]) (*connect.Response[v1.UpdateRegistrationFlowResponse], error)
-	DeleteRegistrationFlow(context.Context, *connect.Request[v1.DeleteRegistrationFlowRequest]) (*connect.Response[v1.DeleteRegistrationFlowResponse], error)
-	CompleteRegistrationFlow(context.Context, *connect.Request[v1.CompleteRegistrationFlowRequest]) (*connect.Response[v1.CompleteRegistrationFlowResponse], error)
+	// Register new user with email or phone number. Sends a verification code to email/phone number. It returns a token which can be used for further requests
+	Register(context.Context, *connect.Request[v1.RegisterRequest]) (*connect.Response[v1.RegisterResponse], error)
+	// Resend Code to email or phone number
+	ResendCode(context.Context, *connect.Request[v1.ResendCodeRequest]) (*connect.Response[v1.ResendCodeResponse], error)
+	// Verify emails or phone number with the code and token. If it return successful response you can login
+	Verify(context.Context, *connect.Request[v1.VerifyRequest]) (*connect.Response[v1.VerifyResponse], error)
 }
 
 // NewRegistrationServiceClient constructs a client for the auth.v1.RegistrationService service. By
@@ -74,28 +72,25 @@ type RegistrationServiceClient interface {
 func NewRegistrationServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) RegistrationServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &registrationServiceClient{
-		createRegistrationFlow: connect.NewClient[v1.CreateRegistrationFlowRequest, v1.CreateRegistrationFlowResponse](
+		register: connect.NewClient[v1.RegisterRequest, v1.RegisterResponse](
 			httpClient,
-			baseURL+RegistrationServiceCreateRegistrationFlowProcedure,
-			connect.WithSchema(registrationServiceCreateRegistrationFlowMethodDescriptor),
+			baseURL+RegistrationServiceRegisterProcedure,
+			connect.WithSchema(registrationServiceRegisterMethodDescriptor),
+			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
-		updateRegistrationFlow: connect.NewClient[v1.UpdateRegistrationFlowRequest, v1.UpdateRegistrationFlowResponse](
+		resendCode: connect.NewClient[v1.ResendCodeRequest, v1.ResendCodeResponse](
 			httpClient,
-			baseURL+RegistrationServiceUpdateRegistrationFlowProcedure,
-			connect.WithSchema(registrationServiceUpdateRegistrationFlowMethodDescriptor),
+			baseURL+RegistrationServiceResendCodeProcedure,
+			connect.WithSchema(registrationServiceResendCodeMethodDescriptor),
+			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
-		deleteRegistrationFlow: connect.NewClient[v1.DeleteRegistrationFlowRequest, v1.DeleteRegistrationFlowResponse](
+		verify: connect.NewClient[v1.VerifyRequest, v1.VerifyResponse](
 			httpClient,
-			baseURL+RegistrationServiceDeleteRegistrationFlowProcedure,
-			connect.WithSchema(registrationServiceDeleteRegistrationFlowMethodDescriptor),
-			connect.WithClientOptions(opts...),
-		),
-		completeRegistrationFlow: connect.NewClient[v1.CompleteRegistrationFlowRequest, v1.CompleteRegistrationFlowResponse](
-			httpClient,
-			baseURL+RegistrationServiceCompleteRegistrationFlowProcedure,
-			connect.WithSchema(registrationServiceCompleteRegistrationFlowMethodDescriptor),
+			baseURL+RegistrationServiceVerifyProcedure,
+			connect.WithSchema(registrationServiceVerifyMethodDescriptor),
+			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -103,38 +98,34 @@ func NewRegistrationServiceClient(httpClient connect.HTTPClient, baseURL string,
 
 // registrationServiceClient implements RegistrationServiceClient.
 type registrationServiceClient struct {
-	createRegistrationFlow   *connect.Client[v1.CreateRegistrationFlowRequest, v1.CreateRegistrationFlowResponse]
-	updateRegistrationFlow   *connect.Client[v1.UpdateRegistrationFlowRequest, v1.UpdateRegistrationFlowResponse]
-	deleteRegistrationFlow   *connect.Client[v1.DeleteRegistrationFlowRequest, v1.DeleteRegistrationFlowResponse]
-	completeRegistrationFlow *connect.Client[v1.CompleteRegistrationFlowRequest, v1.CompleteRegistrationFlowResponse]
+	register   *connect.Client[v1.RegisterRequest, v1.RegisterResponse]
+	resendCode *connect.Client[v1.ResendCodeRequest, v1.ResendCodeResponse]
+	verify     *connect.Client[v1.VerifyRequest, v1.VerifyResponse]
 }
 
-// CreateRegistrationFlow calls auth.v1.RegistrationService.CreateRegistrationFlow.
-func (c *registrationServiceClient) CreateRegistrationFlow(ctx context.Context, req *connect.Request[v1.CreateRegistrationFlowRequest]) (*connect.Response[v1.CreateRegistrationFlowResponse], error) {
-	return c.createRegistrationFlow.CallUnary(ctx, req)
+// Register calls auth.v1.RegistrationService.Register.
+func (c *registrationServiceClient) Register(ctx context.Context, req *connect.Request[v1.RegisterRequest]) (*connect.Response[v1.RegisterResponse], error) {
+	return c.register.CallUnary(ctx, req)
 }
 
-// UpdateRegistrationFlow calls auth.v1.RegistrationService.UpdateRegistrationFlow.
-func (c *registrationServiceClient) UpdateRegistrationFlow(ctx context.Context, req *connect.Request[v1.UpdateRegistrationFlowRequest]) (*connect.Response[v1.UpdateRegistrationFlowResponse], error) {
-	return c.updateRegistrationFlow.CallUnary(ctx, req)
+// ResendCode calls auth.v1.RegistrationService.ResendCode.
+func (c *registrationServiceClient) ResendCode(ctx context.Context, req *connect.Request[v1.ResendCodeRequest]) (*connect.Response[v1.ResendCodeResponse], error) {
+	return c.resendCode.CallUnary(ctx, req)
 }
 
-// DeleteRegistrationFlow calls auth.v1.RegistrationService.DeleteRegistrationFlow.
-func (c *registrationServiceClient) DeleteRegistrationFlow(ctx context.Context, req *connect.Request[v1.DeleteRegistrationFlowRequest]) (*connect.Response[v1.DeleteRegistrationFlowResponse], error) {
-	return c.deleteRegistrationFlow.CallUnary(ctx, req)
-}
-
-// CompleteRegistrationFlow calls auth.v1.RegistrationService.CompleteRegistrationFlow.
-func (c *registrationServiceClient) CompleteRegistrationFlow(ctx context.Context, req *connect.Request[v1.CompleteRegistrationFlowRequest]) (*connect.Response[v1.CompleteRegistrationFlowResponse], error) {
-	return c.completeRegistrationFlow.CallUnary(ctx, req)
+// Verify calls auth.v1.RegistrationService.Verify.
+func (c *registrationServiceClient) Verify(ctx context.Context, req *connect.Request[v1.VerifyRequest]) (*connect.Response[v1.VerifyResponse], error) {
+	return c.verify.CallUnary(ctx, req)
 }
 
 // RegistrationServiceHandler is an implementation of the auth.v1.RegistrationService service.
 type RegistrationServiceHandler interface {
-	CreateRegistrationFlow(context.Context, *connect.Request[v1.CreateRegistrationFlowRequest]) (*connect.Response[v1.CreateRegistrationFlowResponse], error)
-	UpdateRegistrationFlow(context.Context, *connect.Request[v1.UpdateRegistrationFlowRequest]) (*connect.Response[v1.UpdateRegistrationFlowResponse], error)
-	DeleteRegistrationFlow(context.Context, *connect.Request[v1.DeleteRegistrationFlowRequest]) (*connect.Response[v1.DeleteRegistrationFlowResponse], error)
-	CompleteRegistrationFlow(context.Context, *connect.Request[v1.CompleteRegistrationFlowRequest]) (*connect.Response[v1.CompleteRegistrationFlowResponse], error)
+	// Register new user with email or phone number. Sends a verification code to email/phone number. It returns a token which can be used for further requests
+	Register(context.Context, *connect.Request[v1.RegisterRequest]) (*connect.Response[v1.RegisterResponse], error)
+	// Resend Code to email or phone number
+	ResendCode(context.Context, *connect.Request[v1.ResendCodeRequest]) (*connect.Response[v1.ResendCodeResponse], error)
+	// Verify emails or phone number with the code and token. If it return successful response you can login
+	Verify(context.Context, *connect.Request[v1.VerifyRequest]) (*connect.Response[v1.VerifyResponse], error)
 }
 
 // NewRegistrationServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -143,40 +134,35 @@ type RegistrationServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewRegistrationServiceHandler(svc RegistrationServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	registrationServiceCreateRegistrationFlowHandler := connect.NewUnaryHandler(
-		RegistrationServiceCreateRegistrationFlowProcedure,
-		svc.CreateRegistrationFlow,
-		connect.WithSchema(registrationServiceCreateRegistrationFlowMethodDescriptor),
+	registrationServiceRegisterHandler := connect.NewUnaryHandler(
+		RegistrationServiceRegisterProcedure,
+		svc.Register,
+		connect.WithSchema(registrationServiceRegisterMethodDescriptor),
+		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
-	registrationServiceUpdateRegistrationFlowHandler := connect.NewUnaryHandler(
-		RegistrationServiceUpdateRegistrationFlowProcedure,
-		svc.UpdateRegistrationFlow,
-		connect.WithSchema(registrationServiceUpdateRegistrationFlowMethodDescriptor),
+	registrationServiceResendCodeHandler := connect.NewUnaryHandler(
+		RegistrationServiceResendCodeProcedure,
+		svc.ResendCode,
+		connect.WithSchema(registrationServiceResendCodeMethodDescriptor),
+		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
-	registrationServiceDeleteRegistrationFlowHandler := connect.NewUnaryHandler(
-		RegistrationServiceDeleteRegistrationFlowProcedure,
-		svc.DeleteRegistrationFlow,
-		connect.WithSchema(registrationServiceDeleteRegistrationFlowMethodDescriptor),
-		connect.WithHandlerOptions(opts...),
-	)
-	registrationServiceCompleteRegistrationFlowHandler := connect.NewUnaryHandler(
-		RegistrationServiceCompleteRegistrationFlowProcedure,
-		svc.CompleteRegistrationFlow,
-		connect.WithSchema(registrationServiceCompleteRegistrationFlowMethodDescriptor),
+	registrationServiceVerifyHandler := connect.NewUnaryHandler(
+		RegistrationServiceVerifyProcedure,
+		svc.Verify,
+		connect.WithSchema(registrationServiceVerifyMethodDescriptor),
+		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/auth.v1.RegistrationService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case RegistrationServiceCreateRegistrationFlowProcedure:
-			registrationServiceCreateRegistrationFlowHandler.ServeHTTP(w, r)
-		case RegistrationServiceUpdateRegistrationFlowProcedure:
-			registrationServiceUpdateRegistrationFlowHandler.ServeHTTP(w, r)
-		case RegistrationServiceDeleteRegistrationFlowProcedure:
-			registrationServiceDeleteRegistrationFlowHandler.ServeHTTP(w, r)
-		case RegistrationServiceCompleteRegistrationFlowProcedure:
-			registrationServiceCompleteRegistrationFlowHandler.ServeHTTP(w, r)
+		case RegistrationServiceRegisterProcedure:
+			registrationServiceRegisterHandler.ServeHTTP(w, r)
+		case RegistrationServiceResendCodeProcedure:
+			registrationServiceResendCodeHandler.ServeHTTP(w, r)
+		case RegistrationServiceVerifyProcedure:
+			registrationServiceVerifyHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -186,18 +172,14 @@ func NewRegistrationServiceHandler(svc RegistrationServiceHandler, opts ...conne
 // UnimplementedRegistrationServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedRegistrationServiceHandler struct{}
 
-func (UnimplementedRegistrationServiceHandler) CreateRegistrationFlow(context.Context, *connect.Request[v1.CreateRegistrationFlowRequest]) (*connect.Response[v1.CreateRegistrationFlowResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("auth.v1.RegistrationService.CreateRegistrationFlow is not implemented"))
+func (UnimplementedRegistrationServiceHandler) Register(context.Context, *connect.Request[v1.RegisterRequest]) (*connect.Response[v1.RegisterResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("auth.v1.RegistrationService.Register is not implemented"))
 }
 
-func (UnimplementedRegistrationServiceHandler) UpdateRegistrationFlow(context.Context, *connect.Request[v1.UpdateRegistrationFlowRequest]) (*connect.Response[v1.UpdateRegistrationFlowResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("auth.v1.RegistrationService.UpdateRegistrationFlow is not implemented"))
+func (UnimplementedRegistrationServiceHandler) ResendCode(context.Context, *connect.Request[v1.ResendCodeRequest]) (*connect.Response[v1.ResendCodeResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("auth.v1.RegistrationService.ResendCode is not implemented"))
 }
 
-func (UnimplementedRegistrationServiceHandler) DeleteRegistrationFlow(context.Context, *connect.Request[v1.DeleteRegistrationFlowRequest]) (*connect.Response[v1.DeleteRegistrationFlowResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("auth.v1.RegistrationService.DeleteRegistrationFlow is not implemented"))
-}
-
-func (UnimplementedRegistrationServiceHandler) CompleteRegistrationFlow(context.Context, *connect.Request[v1.CompleteRegistrationFlowRequest]) (*connect.Response[v1.CompleteRegistrationFlowResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("auth.v1.RegistrationService.CompleteRegistrationFlow is not implemented"))
+func (UnimplementedRegistrationServiceHandler) Verify(context.Context, *connect.Request[v1.VerifyRequest]) (*connect.Response[v1.VerifyResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("auth.v1.RegistrationService.Verify is not implemented"))
 }

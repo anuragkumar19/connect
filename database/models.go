@@ -5,107 +5,30 @@
 package database
 
 import (
-	"database/sql/driver"
-	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	ulid "github.com/oklog/ulid/v2"
 )
 
-type RegistrationFlowsState string
-
-const (
-	RegistrationFlowsStateInvalidFields         RegistrationFlowsState = "invalid_fields"
-	RegistrationFlowsStateVerificationCodeSent  RegistrationFlowsState = "verification_code_sent"
-	RegistrationFlowsStateRegistrationCompleted RegistrationFlowsState = "registration_completed"
-)
-
-func (e *RegistrationFlowsState) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = RegistrationFlowsState(s)
-	case string:
-		*e = RegistrationFlowsState(s)
-	default:
-		return fmt.Errorf("unsupported scan type for RegistrationFlowsState: %T", src)
-	}
-	return nil
-}
-
-type NullRegistrationFlowsState struct {
-	RegistrationFlowsState RegistrationFlowsState
-	Valid                  bool // Valid is true if RegistrationFlowsState is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullRegistrationFlowsState) Scan(value interface{}) error {
-	if value == nil {
-		ns.RegistrationFlowsState, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.RegistrationFlowsState.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullRegistrationFlowsState) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.RegistrationFlowsState), nil
-}
-
-func (e RegistrationFlowsState) Valid() bool {
-	switch e {
-	case RegistrationFlowsStateInvalidFields,
-		RegistrationFlowsStateVerificationCodeSent,
-		RegistrationFlowsStateRegistrationCompleted:
-		return true
-	}
-	return false
-}
-
-func AllRegistrationFlowsStateValues() []RegistrationFlowsState {
-	return []RegistrationFlowsState{
-		RegistrationFlowsStateInvalidFields,
-		RegistrationFlowsStateVerificationCodeSent,
-		RegistrationFlowsStateRegistrationCompleted,
-	}
-}
-
-type RegistrationFlow struct {
-	ID                                           int64
-	CreatedAt                                    time.Time
-	UpdatedAt                                    time.Time
-	Version                                      int32
-	ExpireAt                                     time.Time
-	CsrfToken                                    string
-	State                                        RegistrationFlowsState
-	EmailValue                                   pgtype.Text
-	EmailIsValid                                 bool
-	EmailErrorMessage                            pgtype.Text
-	EmailCode                                    pgtype.Text
-	EmailCodeExpiry                              pgtype.Timestamptz
-	EmailCodeIncorrectVerificationAttempts       int32
-	EmailCodeRemainingVerificationAttempts       int32
-	EmailCodeIsVerified                          bool
-	EmailCodeErrorMessage                        pgtype.Text
-	PhoneNumberValue                             pgtype.Text
-	PhoneNumberIsValid                           bool
-	PhoneNumberErrorMessage                      pgtype.Text
-	PhoneNumberCode                              pgtype.Text
-	PhoneNumberCodeExpiry                        pgtype.Timestamptz
-	PhoneNumberCodeIncorrectVerificationAttempts int32
-	PhoneNumberCodeRemainingVerificationAttempts int32
-	PhoneNumberCodeIsVerified                    bool
-	PhoneNumberCodeErrorMessage                  pgtype.Text
-	NameValue                                    pgtype.Text
-	NameIsValid                                  bool
-	NameErrorMessage                             pgtype.Text
-	UsernameValue                                pgtype.Text
-	UsernameIsValid                              bool
-	UsernameErrorMessage                         pgtype.Text
-	PasswordValue                                pgtype.Text
-	PasswordIsValid                              bool
-	PasswordErrorMessage                         pgtype.Text
+type User struct {
+	ID                   ulid.ULID
+	CreatedAt            time.Time
+	UpdatedAt            time.Time
+	Version              int32
+	Name                 string
+	Username             string
+	Dob                  pgtype.Date
+	Bio                  pgtype.Text
+	Website              pgtype.Text
+	Location             pgtype.Text
+	AvatarPath           pgtype.Text
+	BannerPath           pgtype.Text
+	LastActiveAt         time.Time
+	PrimaryEmailID       ulid.ULID
+	PrimaryPhoneNumberID ULIDValue
+	IsTwoFactorEnabled   bool
+	IsBot                bool
+	ProfileLocked        bool
+	ShowDob              bool
 }

@@ -9,8 +9,7 @@ import (
 )
 
 type Querier interface {
-	CreateRegistrationFlow(ctx context.Context, arg *CreateRegistrationFlowParams) (RegistrationFlow, error)
-	GetRegistrationFlow(ctx context.Context, id int64) (RegistrationFlow, error)
+	CreateUser(ctx context.Context, name string) error
 }
 
 var _ Querier = (*Queries)(nil)

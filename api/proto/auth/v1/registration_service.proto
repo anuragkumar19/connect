@@ -2,14 +2,87 @@ syntax = "proto3";
 
 package auth.v1;
 
-import "auth/v1/complete_registration_flow.proto";
-import "auth/v1/create_registration_flow.proto";
-import "auth/v1/delete_registration_flow.proto";
-import "auth/v1/update_registration_flow.proto";
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
 
 service RegistrationService {
-  rpc CreateRegistrationFlow(CreateRegistrationFlowRequest) returns (CreateRegistrationFlowResponse);
-  rpc UpdateRegistrationFlow(UpdateRegistrationFlowRequest) returns (UpdateRegistrationFlowResponse);
-  rpc DeleteRegistrationFlow(DeleteRegistrationFlowRequest) returns (DeleteRegistrationFlowResponse);
-  rpc CompleteRegistrationFlow(CompleteRegistrationFlowRequest) returns (CompleteRegistrationFlowResponse);
+  // Register new user with email or phone number. Sends a verification code to email/phone number. It returns a token which can be used for further requests
+  rpc Register(RegisterRequest) returns (RegisterResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+
+  // Resend Code to email or phone number
+  rpc ResendCode(ResendCodeRequest) returns (ResendCodeResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+
+  // Verify emails or phone number with the code and token. If it return successful response you can login
+  rpc Verify(VerifyRequest) returns (VerifyResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
 }
+
+message RegisterRequest {
+  // Full name for user
+  string name = 1 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).string.min_len = 2,
+    (buf.validate.field).string.max_len = 30
+  ];
+
+  // Unique user for your account. Should only contain letter, numbers and underscores, it cannot start with number or underscore
+  string username = 2 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).string.min_len = 4,
+    (buf.validate.field).string.max_len = 30,
+    (buf.validate.field).string.pattern = "^[a-zA-Z][a-zA-Z0-9_]*$"
+  ];
+
+  // Contact detail. Either phone number or email must be set
+  oneof contact_detail {
+    option (buf.validate.oneof).required = true;
+    // Email
+    string email = 3 [(buf.validate.field).string.email = true];
+
+    // Phone number
+    string phone_number = 4;
+  }
+
+  // Password: required and minimum length should be 8
+  string password = 5 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).string.min_len = 8,
+    (buf.validate.field).string.max_len = 250
+  ];
+}
+
+message RegisterResponse {
+  // Token for email or phone number verification, code resend
+  string token = 1 [(buf.validate.field).required = true];
+  google.protobuf.Timestamp code_resend_after = 2 [(buf.validate.field).required = true];
+}
+
+message ResendCodeRequest {
+  string token = 1 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).string.max_len = 2000
+  ];
+}
+
+message ResendCodeResponse {
+  google.protobuf.Timestamp code_resend_after = 2 [(buf.validate.field).required = true];
+}
+
+message VerifyRequest {
+  string token = 1 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).string.max_len = 2000
+  ];
+
+  string code = 2 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).string.max_len = 6
+  ];
+}
+
+message VerifyResponse {}

@@ -3,6 +3,7 @@ module github.com/anuragkumar19/connect
 go 1.23.1
 
 require (
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.35.2-20240920164238-5a7b106cbb87.1
 	connectrpc.com/connect v1.17.0
 	connectrpc.com/cors v0.1.0
 	github.com/go-chi/chi/v5 v5.1.0
@@ -10,12 +11,13 @@ require (
 	github.com/jackc/pgx/v5 v5.7.1
 	github.com/minio/minio-go/v7 v7.0.78
 	github.com/nats-io/nats.go v1.37.0
+	github.com/oklog/ulid/v2 v2.1.0
 	github.com/rs/cors v1.11.1
 	github.com/rs/zerolog v1.33.0
 	go.uber.org/automaxprocs v1.6.0
 	golang.org/x/net v0.30.0
 	golang.org/x/sync v0.8.0
-	google.golang.org/protobuf v1.35.1
+	google.golang.org/protobuf v1.35.2
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	jaytaylor.com/html2text v0.0.0-20230321000545-74c2419ad056
 )

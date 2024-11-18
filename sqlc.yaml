@@ -18,3 +18,13 @@ sql:
             go_type:
               import: "time"
               type: "Time"
+          - db_type: ulid
+            go_type:
+              import: "github.com/oklog/ulid/v2"
+              type: "ULID"
+              pointer: false
+          - db_type: ulid
+            go_type:
+              type: "ULIDValue"
+              pointer: false
+            nullable: true
