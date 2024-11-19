@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/anuragkumar19/connect/api"
+	"github.com/anuragkumar19/connect/buildinfo"
 	"github.com/anuragkumar19/connect/database"
 	"github.com/anuragkumar19/connect/infra/nats"
 	"github.com/anuragkumar19/connect/infra/postgres"
@@ -22,6 +23,7 @@ import (
 )
 
 var (
+	bin               = "connect-server"
 	version           = "0.0.1"
 	commit            = "NA"
 	buildBranch       = "main"
@@ -30,7 +32,7 @@ var (
 )
 
 func main() {
-	log.Logger = zerolog.New(os.Stdout).With().Caller().Timestamp().Str("bin", "connect-server").Logger()
+	log.Logger = zerolog.New(os.Stdout).With().Caller().Timestamp().Logger()
 
 	logLevel := zerolog.InfoLevel
 
@@ -53,7 +55,13 @@ func main() {
 		buildStamp = bs
 	}
 
-	log.Info().Str("version", version).Str("commit", commit).Str("branch", buildBranch).Time("build_at", buildStamp).Msg("")
+	buildinfo.SetBin(bin)
+	buildinfo.SetVersion(version)
+	buildinfo.SetBranch(buildBranch)
+	buildinfo.SetCommit(commit)
+	buildinfo.SetTimestamp(buildStamp)
+
+	log.Info().Str("version", version).Str("bin", bin).Str("commit", commit).Str("branch", buildBranch).Time("build_at", buildStamp).Msg("")
 
 	maxprocs.Set(maxprocs.Logger(func(s string, i ...interface{}) {
 		str := fmt.Sprintf(s, i...)

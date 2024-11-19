@@ -32,7 +32,7 @@ type Password struct {
 	AbandonedAt                  pgtype.Timestamptz
 	IsActive                     bool
 	UserID                       ulid.ULID
-	Value                        []byte
+	Value                        string
 	IncorrectAttemptCount        int32
 	LastIncorrectAttemptAt       pgtype.Timestamptz
 	IncorrectAttemptCountResetAt pgtype.Timestamptz
@@ -51,6 +51,10 @@ type PhoneNumber struct {
 	VerificationCodeSentCount        int32
 	VerificationCodeLastSentAt       pgtype.Timestamptz
 	VerificationCodeSentCountResetAt pgtype.Timestamptz
+}
+
+type ReservedUsername struct {
+	Username string
 }
 
 type User struct {
