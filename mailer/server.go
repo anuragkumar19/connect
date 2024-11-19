@@ -16,7 +16,7 @@ import (
 	mailerv1 "github.com/anuragkumar19/connect/events/gen/mailer/v1"
 	"github.com/anuragkumar19/connect/infra/nats"
 	"github.com/anuragkumar19/connect/infra/smtp"
-	"github.com/anuragkumar19/connect/stacktrace"
+	"github.com/anuragkumar19/connect/pkg/stacktrace"
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/rs/zerolog/log"
 )

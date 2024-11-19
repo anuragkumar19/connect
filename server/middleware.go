@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"runtime/debug"
 
-	"github.com/anuragkumar19/connect/stacktrace"
+	"github.com/anuragkumar19/connect/pkg/stacktrace"
 	"github.com/rs/zerolog/log"
 )
 

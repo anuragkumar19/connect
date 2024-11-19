@@ -3,7 +3,7 @@ package nats
 import (
 	"time"
 
-	"github.com/anuragkumar19/connect/env"
+	"github.com/anuragkumar19/connect/pkg/env"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 
