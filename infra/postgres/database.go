@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
 )
@@ -27,6 +28,18 @@ func New(ctx context.Context, config *Config) (Postgres, error) {
 	dbConf.MinConns = config.MinConns
 	dbConf.HealthCheckPeriod = config.HealthCheckPeriod
 
+	dbConf.AfterConnect = func(ctx context.Context, c *pgx.Conn) error {
+		types, err := c.LoadTypes(ctx, []string{
+			"citext",
+			"ulid",
+		})
+		if err != nil {
+			log.Error().Err(err).Msg("failed to load custom types for pgx.Conn")
+			return err
+		}
+		c.TypeMap().RegisterTypes(types)
+		return nil
+	}
 	// create pool
 	dbPool, err := pgxpool.NewWithConfig(ctx, dbConf)
 	if err != nil {

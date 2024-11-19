@@ -1,6 +1,4 @@
 -- +goose Up
-CREATE EXTENSION IF NOT EXISTS citext;
-
 CREATE TABLE
     "users" (
         "id" ulid PRIMARY KEY NOT NULL,
@@ -18,7 +16,7 @@ CREATE TABLE
         "last_active_at" TIMESTAMPTZ DEFAULT NOW() NOT NULL,
         "primary_email_id" ulid UNIQUE NOT NULL,
         "primary_phone_number_id" ulid UNIQUE,
-        "is_two_factor_enabled" BOOLEAN DEFAULT FALSE NOT NULL,
+        "is_mfa_enabled" BOOLEAN DEFAULT FALSE NOT NULL,
         "is_bot" BOOLEAN NOT NULL DEFAULT FALSE,
         "profile_locked" BOOLEAN NOT NULL DEFAULT FALSE,
         "show_dob" BOOLEAN NOT NULL DEFAULT FALSE

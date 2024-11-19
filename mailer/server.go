@@ -104,12 +104,12 @@ func (s *Server) Start() error {
 	s.mutex.Unlock()
 	g := errgroup.Group{}
 
-	log.Info().Int("count", s.config.Concurrency).Msg("staring workers")
+	log.Info().Int("count", s.config.Concurrency).Msg("staring workers goroutines for mailer")
 	for range s.config.Concurrency {
 		g.Go(func() error {
 			c, err := s.sendEmailConsumer.Consume(s.consumeHandler, jetstream.PullMaxMessages(1))
 			if err != nil {
-				return fmt.Errorf("failed to consume messages from consumer: %w", err)
+				return fmt.Errorf("failed to register consume handler for %s consumer: %w", s.sendEmailConsumer.CachedInfo().Name, err)
 			}
 			s.mutex.Lock()
 			s.consumers = append(s.consumers, c)
@@ -121,7 +121,7 @@ func (s *Server) Start() error {
 		return err
 	}
 
-	log.Info().Msg("consumer workers started")
+	log.Info().Msg("workers goroutines started")
 	return nil
 }
 
@@ -166,11 +166,11 @@ func (s *Server) consumeHandler(msg jetstream.Msg) {
 	// TODO: use context with timeout = AckWait
 	meta, err := msg.Metadata()
 	if err != nil {
-		if err := msg.TermWithReason("failed to get metadata from message"); err != nil {
+		if err := msg.TermWithReason("failed to retrieve metadata from message"); err != nil {
 			log.Error().Err(err).Msg("failed to terminate msg")
 			return
 		}
-		log.Error().Err(err).Msg("failed to retrieve metadata from nats message")
+		log.Error().Err(err).Msg("failed to retrieve metadata from nats message, message terminated")
 		return
 	}
 
@@ -184,25 +184,25 @@ func (s *Server) consumeHandler(msg jetstream.Msg) {
 			log.Error().Err(err).Msg("failed to terminate msg")
 			return
 		}
-		l.Error().Err(err).Msg("failed to parse data into expected format")
+		l.Error().Err(err).Msg("failed to parse data into expected format, message terminated")
 		return
 	}
 
 	l.Info().Msg("sending email")
 	if err := s.sendMail(&sendEmailMsg); err != nil {
 		if err := msg.Nak(); err != nil {
-			l.Error().Err(err).Msg("failed to nak msg")
+			l.Error().Err(err).Msg("failed to nak message")
 			return
 		}
-		l.Error().Err(err).Msg("failed to send email")
+		l.Error().Err(err).Msg("failed to send email, message naked")
 		return
 	}
 	if err := msg.DoubleAck(context.Background()); err != nil {
 		if err := msg.Nak(); err != nil {
-			l.Error().Err(err).Msg("failed to nak msg")
+			l.Error().Err(err).Msg("failed to nak message")
 			return
 		}
-		l.Error().Err(err).Msg("failed to ack msg")
+		l.Error().Err(err).Msg("failed to ack message, message naked")
 		return
 	}
 	l.Info().Msg("email sent successfully")
