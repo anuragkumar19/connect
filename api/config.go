@@ -1,10 +1,10 @@
-package server
+package api
 
 import (
-	"strconv"
 	"time"
 
 	"github.com/anuragkumar19/connect/pkg/env"
+	"github.com/anuragkumar19/connect/pkg/server"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 
@@ -24,9 +24,9 @@ var defaultConfig = &Config{
 func AutoConfig() (*Config, error) {
 	cfg := *defaultConfig
 
-	env.Str("SERVER_HOST", &cfg.Host)
-	env.Str("NATS_PORT", &cfg.Port)
-	if err := env.Duration("SERVER_HANDLER_TIMEOUT", &cfg.HandlerTimeout); err != nil {
+	env.Str("API_SERVER_HOST", &cfg.Host)
+	env.Str("API_SERVER_PORT", &cfg.Port)
+	if err := env.Duration("API_SERVER_HANDLER_TIMEOUT", &cfg.HandlerTimeout); err != nil {
 		return nil, err
 	}
 	return &cfg, nil
@@ -35,18 +35,8 @@ func AutoConfig() (*Config, error) {
 func (config Config) Validate() error {
 	return validation.ValidateStruct(
 		&config,
-		validation.Field(&config.Host, validation.Required),
-		validation.Field(&config.Port, validation.Required, validation.NewStringRule(func(v string) bool {
-			p, err := strconv.Atoi(v)
-			if err != nil {
-				return false
-			}
-			if p < 0 || p > 65535 {
-				return false
-			}
-
-			return true
-		}, "invalid port")),
+		validation.Field(&config.Host, validation.Required, server.HostValidationRule),
+		validation.Field(&config.Port, validation.Required, server.PortValidationRule),
 		validation.Field(&config.HandlerTimeout, validation.Required, validation.Min(time.Millisecond)),
 	)
 }

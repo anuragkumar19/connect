@@ -2,6 +2,9 @@ package buildinfo
 
 import "time"
 
+// TODO: append build info with right key in prometheus metrics
+// TODO: append build info in expvar
+
 var (
 	info = &buildInfo{
 		bin:       "",

@@ -15,8 +15,8 @@ import (
 	"github.com/anuragkumar19/connect/infra/smtp"
 	"github.com/anuragkumar19/connect/infra/storage"
 	"github.com/anuragkumar19/connect/mailer"
+	"github.com/anuragkumar19/connect/metrics"
 	"github.com/anuragkumar19/connect/pkg/buildinfo"
-	"github.com/anuragkumar19/connect/server"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"go.uber.org/automaxprocs/maxprocs"
@@ -32,6 +32,7 @@ var (
 )
 
 func main() {
+	// TODO: Register hook for tracing. Use otel-slog in different codebase and see results read the third party bridge code and impl own hook
 	log.Logger = zerolog.New(os.Stdout).With().Caller().Timestamp().Logger()
 
 	logLevel := zerolog.InfoLevel
@@ -109,29 +110,34 @@ func main() {
 		log.Fatal().Err(err).Msg("smtp init failed")
 	}
 
-	// TODO: graceful shutdown
-	// TODO: background services and consumers
-	// TODO: prometheus
-
 	database := database.New(pgConn)
 
-	api := api.New(database, &natsConn, &storageClient, &smtpClient)
-
-	serverCfg, err := server.AutoConfig()
+	apiConf, err := api.AutoConfig()
 	if err != nil {
-		log.Fatal().Err(err).Msg("failed to parse server config")
+		log.Fatal().Err(err).Msg("failed to parse api config")
 	}
-	server, err := server.New(serverCfg)
+	apiServer, err := api.NewServer(apiConf, database, &natsConn, &storageClient, &smtpClient)
 	if err != nil {
-		log.Fatal().Err(err).Msg("failed to create server")
+		log.Fatal().Err(err).Msg("failed to create api server")
 	}
 
-	if err := server.Mount("/api", api.Router()); err != nil {
-		log.Fatal().Err(err).Msg("failed to mount api router to server")
+	metricsCfg, err := metrics.AutoConfig()
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to parse metrics config")
+	}
+	metricsServer, err := metrics.NewServer(metricsCfg)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to create metrics server")
 	}
 
 	go func() {
-		if err := server.Start(); err != nil {
+		if err := apiServer.Start(); err != nil {
+			log.Fatal().Err(err).Msg("")
+		}
+	}()
+
+	go func() {
+		if err := metricsServer.Start(); err != nil {
 			log.Fatal().Err(err).Msg("")
 		}
 	}()
@@ -160,7 +166,10 @@ func main() {
 	defer shutdownCancelBase()
 	shutDownCtx, shutdownCancel := signal.NotifyContext(shutDownCtxBase, syscall.SIGINT, syscall.SIGTERM)
 	defer shutdownCancel()
-	if err := server.Shutdown(shutDownCtx); err != nil {
+	if err := apiServer.Shutdown(shutDownCtx); err != nil {
+		log.Fatal().Err(err).Msg("failed to shutdown server")
+	}
+	if err := metricsServer.Shutdown(shutDownCtx); err != nil {
 		log.Fatal().Err(err).Msg("failed to shutdown server")
 	}
 	if err := mailerServer.Shutdown(shutDownCtx); err != nil {

@@ -3,12 +3,16 @@ package server
 import (
 	stdlog "log"
 
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
-var httpErrorLogger = stdlog.New(&errorLogWriter{}, "", 0)
-
 type errorLogWriter struct {
+	logger *zerolog.Logger
+}
+
+func newErrorLogLogger(logger *zerolog.Logger) *stdlog.Logger {
+	return stdlog.New(&errorLogWriter{logger: logger}, "", 0)
 }
 
 func (w *errorLogWriter) Write(p []byte) (n int, err error) {
