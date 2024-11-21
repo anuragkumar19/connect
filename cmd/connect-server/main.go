@@ -31,6 +31,7 @@ var (
 	buildStamp        time.Time
 )
 
+// TODO: different binary and cmd/{{.BIN}}/app
 func main() {
 	// TODO: Register hook for tracing. Use otel-slog in different codebase and see results read the third party bridge code and impl own hook
 	log.Logger = zerolog.New(os.Stdout).With().Caller().Timestamp().Logger()

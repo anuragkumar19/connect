@@ -37,6 +37,8 @@ func New(config *Config, handler http.Handler) (Server, error) {
 		config: config,
 		h:      handler,
 		logger: &logger,
+		mutex:  sync.Mutex{},
+		server: nil,
 	}, nil
 }
 
@@ -68,7 +70,10 @@ func (s *Server) Shutdown(ctx context.Context) error {
 		return ErrServerNotStarted
 	}
 	s.logger.Info().Msg("shutting down server")
-	err := s.server.Shutdown(ctx)
+	if err := s.server.Shutdown(ctx); err != nil {
+		s.logger.Error().Err(err).Msg("failed to shutdown server")
+		return err
+	}
 	s.server = nil
-	return err
+	return nil
 }

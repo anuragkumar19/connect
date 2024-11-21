@@ -13,6 +13,7 @@ vars:
   YAML_FMT_BIN: '{{joinPath .PWD "tools/bin/yamlfmt" | toSlash}}{{exeExt}}'
   GOOSE_BIN: '{{joinPath .PWD "tools/bin/goose" | toSlash}}{{exeExt}}'
   SQLC_BIN: '{{joinPath .PWD "tools/bin/sqlc" | toSlash}}{{exeExt}}'
+  DOCKER_INFRA_FLAGS: "-p connect_dev_infra -f ./docker/dev/docker-compose-infra.yml"
 tasks:
   setup-tools:
     dir: "tools"
@@ -26,22 +27,22 @@ tasks:
       - go build -o {{shellQuote .SQLC_BIN}} github.com/sqlc-dev/sqlc/cmd/sqlc
   infra-create:
     cmds:
-      - "docker compose -f ./docker-compose-dev-required.yml create"
+      - "docker compose {{.DOCKER_INFRA_FLAGS}} create"
   infra-up:
     cmds:
-      - "docker compose -f ./docker-compose-dev-required.yml up -d"
+      - "docker compose {{.DOCKER_INFRA_FLAGS}} up -d"
   infra-down:
     cmds:
-      - "docker compose -f ./docker-compose-dev-required.yml down"
+      - "docker compose {{.DOCKER_INFRA_FLAGS}} down"
   infra-start:
     cmds:
-      - "docker compose -f ./docker-compose-dev-required.yml start"
+      - "docker compose {{.DOCKER_INFRA_FLAGS}} start"
   infra-stop:
     cmds:
-      - "docker compose -f ./docker-compose-dev-required.yml stop"
+      - "docker compose {{.DOCKER_INFRA_FLAGS}} stop"
   infra-restart:
     cmds:
-      - "docker compose -f ./docker-compose-dev-required.yml restart"
+      - "docker compose {{.DOCKER_INFRA_FLAGS}} restart"
   setup:
     deps:
       - setup-tools
