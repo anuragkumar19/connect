@@ -19,7 +19,7 @@ func New(ctx context.Context, config *Config) (NATS, error) {
 		return NATS{}, fmt.Errorf("invalid nats config: %w", err)
 	}
 	closeCh := make(chan struct{}, 1)
-	// TODO: Add context support manually
+	// TODO: Add context support manually ref: https://docs.nats.io/using-nats/developer/tutorials/custom_dialer
 	nc, err := nats.Connect(
 		config.Servers,
 		nats.PingInterval(config.PingInterval),

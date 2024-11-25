@@ -31,6 +31,7 @@ var (
 	sendEmailConsumerName = "mailer:send_email-consumer"
 )
 
+// TODO: abstract consumer
 type Server struct {
 	mutex             sync.Mutex
 	config            *Config
