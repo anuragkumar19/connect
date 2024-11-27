@@ -15,11 +15,9 @@
 ✔ Events and event schema generated from protobuf definition
 NATS and jetstream client(pub-sub, work-queue, kv) generation from protobuf definition
 ✔ - Setup storage (minio/v7)
-- Create db tables and views
+- Soft delete
 ✔ - Setup mailer and consumer (smtp)
-- Setup Server struct in api/
 - Error handling and errordetails package
-- Custom error handler to prevent sending backend error messages to the client
 - Interceptors
 - Caching
 ✔ Setup connectRPC h2c server
@@ -37,13 +35,4 @@ NATS and jetstream client(pub-sub, work-queue, kv) generation from protobuf defi
 - Request validation
 - Seeding data
 - Document protobuf
-- Logger and different pkg from with logging is being done
 
-# 23/10-24/10  Non coding tasks
-- Learn about otel, metrics and logging
-- Grafana, logs, otel, prometheus
-- Checkout links in whatsapp
-
-
-## TODO NOW AFTER BREAK
-- SETUP TOKEN (NOT REQUIRED)
