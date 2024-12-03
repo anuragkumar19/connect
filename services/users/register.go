@@ -1,8 +1,23 @@
 package users
 
-import "context"
+import (
+	"context"
+	"errors"
+)
 
 func (s *Users) Register(ctx context.Context, cmd RegisterCmd) (RegisterResult, error) {
+	if err := cmd.Transform().Validate(); err != nil {
+		return RegisterResult{}, err
+	}
+
+	exist, err := s.queries.IsUsernameAvailable(ctx, cmd.Username)
+	if err != nil {
+		return RegisterResult{}, err
+	}
+	if !exist.Bool {
+		return RegisterResult{}, errors.New("username taken")
+	}
+
 	return RegisterResult{}, nil
 }
 

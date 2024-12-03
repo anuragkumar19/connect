@@ -6,10 +6,15 @@ package database
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
-	CreateUser(ctx context.Context, name string) error
+	CreateRateLimitBucket(ctx context.Context, arg *CreateRateLimitBucketParams) error
+	GetRateLimitBucket(ctx context.Context, id string) (RateLimitBucket, error)
+	IsUsernameAvailable(ctx context.Context, username string) (pgtype.Bool, error)
+	UpdateRateLimitBucket(ctx context.Context, arg *UpdateRateLimitBucketParams) (RateLimitBucket, error)
 }
 
 var _ Querier = (*Queries)(nil)

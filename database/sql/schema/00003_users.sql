@@ -3,7 +3,6 @@ CREATE TABLE
     "users" (
         "id" ulid PRIMARY KEY NOT NULL,
         "created_at" TIMESTAMPTZ DEFAULT NOW() NOT NULL,
-        "updated_at" TIMESTAMPTZ DEFAULT NOW() NOT NULL,
         "version" INTEGER DEFAULT 1 NOT NULL,
         "name" TEXT NOT NULL,
         "username" citext NOT NULL UNIQUE,
@@ -21,6 +20,8 @@ CREATE TABLE
         "profile_locked" BOOLEAN NOT NULL DEFAULT FALSE,
         "show_dob" BOOLEAN NOT NULL DEFAULT FALSE
     );
+
+CREATE INDEX "users_version_idx" ON "users" ("version");
 
 -- +goose Down
 DROP TABLE "users";

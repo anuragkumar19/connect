@@ -12,45 +12,44 @@ import (
 )
 
 type Email struct {
-	ID                               ulid.ULID
-	CreatedAt                        time.Time
-	UpdatedAt                        time.Time
-	Version                          int32
-	UserID                           ulid.ULID
-	Value                            string
-	IsPrimary                        bool
-	IsVerified                       bool
-	LastVerifiedAt                   time.Time
-	VerificationCodeSentCount        int32
-	VerificationCodeLastSentAt       pgtype.Timestamptz
-	VerificationCodeSentCountResetAt pgtype.Timestamptz
+	ID             ulid.ULID
+	CreatedAt      time.Time
+	Version        int32
+	UserID         ulid.ULID
+	Value          string
+	IsPrimary      bool
+	IsVerified     bool
+	LastVerifiedAt time.Time
 }
 
 type Password struct {
-	ID                           ulid.ULID
-	CreatedAt                    time.Time
-	AbandonedAt                  pgtype.Timestamptz
-	IsActive                     bool
-	UserID                       ulid.ULID
-	Value                        string
-	IncorrectAttemptCount        int32
-	LastIncorrectAttemptAt       pgtype.Timestamptz
-	IncorrectAttemptCountResetAt pgtype.Timestamptz
+	ID          int64
+	CreatedAt   time.Time
+	Version     int32
+	AbandonedAt pgtype.Timestamptz
+	IsActive    bool
+	UserID      ulid.ULID
+	Value       string
 }
 
 type PhoneNumber struct {
-	ID                               ulid.ULID
-	CreatedAt                        time.Time
-	UpdatedAt                        time.Time
-	Version                          int32
-	UserID                           ulid.ULID
-	Value                            string
-	IsPrimary                        bool
-	IsVerified                       bool
-	LastVerifiedAt                   time.Time
-	VerificationCodeSentCount        int32
-	VerificationCodeLastSentAt       pgtype.Timestamptz
-	VerificationCodeSentCountResetAt pgtype.Timestamptz
+	ID             ulid.ULID
+	CreatedAt      time.Time
+	Version        int32
+	UserID         ulid.ULID
+	Value          string
+	IsPrimary      bool
+	IsVerified     bool
+	LastVerifiedAt time.Time
+}
+
+type RateLimitBucket struct {
+	ID             string
+	CreatedAt      time.Time
+	LastResetAt    time.Time
+	Version        int32
+	Consumed       int64
+	LastConsumedAt pgtype.Timestamptz
 }
 
 type ReservedUsername struct {
@@ -60,7 +59,6 @@ type ReservedUsername struct {
 type User struct {
 	ID                   ulid.ULID
 	CreatedAt            time.Time
-	UpdatedAt            time.Time
 	Version              int32
 	Name                 string
 	Username             string
@@ -77,4 +75,15 @@ type User struct {
 	IsBot                bool
 	ProfileLocked        bool
 	ShowDob              bool
+}
+
+type VerificationToken struct {
+	Token         string
+	ID            int64
+	CreatedAt     time.Time
+	ExpireAt      time.Time
+	UserID        ulid.ULID
+	EmailID       ULIDValue
+	PhoneNumberID ULIDValue
+	Otp           string
 }

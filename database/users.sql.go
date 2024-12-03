@@ -7,16 +7,33 @@ package database
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const createUser = `-- name: CreateUser :exec
-INSERT INTO
-    "users" ("name")
-VALUES
-    ($1)
+const isUsernameAvailable = `-- name: IsUsernameAvailable :one
+SELECT
+    NOT EXISTS (
+        SELECT
+            1
+        FROM
+            "users"
+        WHERE
+            "users"."username" = $1
+    )
+    AND NOT EXISTS (
+        SELECT
+            1
+        FROM
+            "reserved_usernames"
+        WHERE
+            "reserved_usernames"."username" = $1
+    ) AS "is_username_available"
 `
 
-func (q *Queries) CreateUser(ctx context.Context, name string) error {
-	_, err := q.db.Exec(ctx, createUser, name)
-	return err
+func (q *Queries) IsUsernameAvailable(ctx context.Context, username string) (pgtype.Bool, error) {
+	row := q.db.QueryRow(ctx, isUsernameAvailable, username)
+	var is_username_available pgtype.Bool
+	err := row.Scan(&is_username_available)
+	return is_username_available, err
 }
