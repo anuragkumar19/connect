@@ -47,7 +47,6 @@ type RateLimitBucket struct {
 	ID             string
 	CreatedAt      time.Time
 	LastResetAt    time.Time
-	Version        int32
 	Consumed       int64
 	LastConsumedAt pgtype.Timestamptz
 }

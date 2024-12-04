@@ -11,10 +11,10 @@ import (
 )
 
 type Querier interface {
-	CreateRateLimitBucket(ctx context.Context, arg *CreateRateLimitBucketParams) error
-	GetRateLimitBucket(ctx context.Context, id string) (RateLimitBucket, error)
+	CreateRateLimitBucket(ctx context.Context, arg *CreateRateLimitBucketParams) (RateLimitBucket, error)
+	GetRateLimitBucketForUpdate(ctx context.Context, id string) (RateLimitBucket, error)
 	IsUsernameAvailable(ctx context.Context, username string) (pgtype.Bool, error)
-	UpdateRateLimitBucket(ctx context.Context, arg *UpdateRateLimitBucketParams) (RateLimitBucket, error)
+	UpdateRateLimitBucket(ctx context.Context, arg *UpdateRateLimitBucketParams) error
 }
 
 var _ Querier = (*Queries)(nil)

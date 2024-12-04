@@ -1,26 +1,31 @@
--- name: GetRateLimitBucket :one
+-- name: GetRateLimitBucketForUpdate :one
 SELECT
     *
 FROM
     "rate_limit_buckets"
 WHERE
-    "id" = $1;
+    "id" = $1
+FOR UPDATE;
 
--- name: CreateRateLimitBucket :exec
+-- name: CreateRateLimitBucket :one
 INSERT INTO
-    "rate_limit_buckets" ("id", "last_reset_at", "version", "consumed", "last_consumed_at")
+    "rate_limit_buckets" (
+        "id",
+        "last_reset_at",
+        "consumed",
+        "last_consumed_at"
+    )
 VALUES
-    ($1, $2, $3, $4, $5);
+    ($1, $2, $3, $4)
+ON CONFLICT DO NOTHING
+RETURNING
+    *;
 
--- name: UpdateRateLimitBucket :one
+-- name: UpdateRateLimitBucket :exec
 UPDATE "rate_limit_buckets"
 SET
     "last_reset_at" = $1,
     "consumed" = $2,
-    "last_consumed_at" = $3,
-    "version" = "version" + 1
+    "last_consumed_at" = $3
 WHERE
-    "id" = $4
-    AND "version" = $5
-RETURNING
-    *;
+    "id" = $4;

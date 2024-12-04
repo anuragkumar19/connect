@@ -3,83 +3,85 @@ package ratelimiter
 import (
 	"context"
 	"errors"
-	"sync"
 	"time"
 )
 
 type BucketCtx struct {
 	ID                 string    `json:"id"`
-	Revision           int       `json:"revision"`
 	LastResetAt        time.Time `json:"last_reset_at"`
 	ConsumedTokenCount int       `json:"consumed_token_count"`
 	LastConsumedAt     time.Time `json:"last_consumed_at"`
 }
 
-type Bucket[T any] struct {
-	mu  sync.Mutex
-	l   *BasicLimiter[T]
-	ctx *BucketCtx
+func NewBucketCtx(id string) BucketCtx {
+	return BucketCtx{
+		ID:                 id,
+		LastResetAt:        time.Now(),
+		ConsumedTokenCount: 0,
+		LastConsumedAt:     time.Time{},
+	}
 }
 
-func (b *Bucket[T]) Ctx() BucketCtx {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-	return *b.ctx
+type Bucket[T any] struct {
+	l  *BasicLimiter[T]
+	id string
 }
 
 func (b *Bucket[T]) Consume(ctx context.Context) error {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-
 	now := time.Now()
 
-	if b.ctx.LastResetAt.Add(b.l.resetAfter).Before(now) {
-		b.ctx.ConsumedTokenCount = 0
-		b.ctx.LastResetAt = now
-		b.ctx.LastConsumedAt = time.Time{}
-	}
-
-	if b.ctx.ConsumedTokenCount >= b.l.limit {
-		tryAfter := b.ctx.LastResetAt.Add(b.l.resetAfter)
-		return &RateLimitError{
-			Remaining: 0,
-			ResetAt:   tryAfter,
-			TryAfter:  tryAfter,
+	return b.l.store.BeginFunc(ctx, func(s Store) error {
+		bucket, err := s.Get(ctx, b.id)
+		if err != nil {
+			return err
 		}
-	}
 
-	backoffLen := len(b.l.backOffs)
-	if backoffLen > 0 && b.ctx.ConsumedTokenCount > 0 {
-		i := b.ctx.ConsumedTokenCount - 1
-		if b.ctx.ConsumedTokenCount > backoffLen {
-			i = backoffLen - 1
+		if bucket.LastResetAt.Add(b.l.resetAfter).Before(now) {
+			bucket.ConsumedTokenCount = 0
+			bucket.LastResetAt = now
+			bucket.LastConsumedAt = time.Time{}
 		}
-		d := b.l.backOffs[i]
 
-		tryAfter := b.ctx.LastConsumedAt.Add(d)
-		resetAt := b.ctx.LastResetAt.Add(b.l.resetAfter)
-		if resetAt.Before(tryAfter) {
-			tryAfter = resetAt
-		}
-		if tryAfter.After(now) {
+		if bucket.ConsumedTokenCount >= b.l.limit {
+			tryAfter := bucket.LastResetAt.Add(b.l.resetAfter)
 			return &RateLimitError{
-				Remaining: b.l.limit - b.ctx.ConsumedTokenCount,
-				ResetAt:   resetAt,
+				Remaining: 0,
+				ResetAt:   tryAfter,
 				TryAfter:  tryAfter,
 			}
 		}
-	}
 
-	b.ctx.ConsumedTokenCount++
-	b.ctx.LastConsumedAt = now
+		backoffLen := len(b.l.backOffs)
+		if backoffLen > 0 && bucket.ConsumedTokenCount > 0 {
+			i := bucket.ConsumedTokenCount - 1
+			if bucket.ConsumedTokenCount > backoffLen {
+				i = backoffLen - 1
+			}
+			d := b.l.backOffs[i]
 
-	bCtx, err := b.l.store.Update(ctx, *b.ctx)
-	if err != nil {
-		if errors.Is(err, ErrNotFound) {
-			return ErrRevisionMismatch
+			tryAfter := bucket.LastConsumedAt.Add(d)
+			resetAt := bucket.LastResetAt.Add(b.l.resetAfter)
+			if resetAt.Before(tryAfter) {
+				tryAfter = resetAt
+			}
+			if tryAfter.After(now) {
+				return &RateLimitError{
+					Remaining: b.l.limit - bucket.ConsumedTokenCount,
+					ResetAt:   resetAt,
+					TryAfter:  tryAfter,
+				}
+			}
 		}
-		return err
-	}
-	b.ctx = &bCtx
-	return nil
+
+		bucket.ConsumedTokenCount++
+		bucket.LastConsumedAt = now
+
+		if err := s.Update(ctx, bucket); err != nil {
+			if errors.Is(err, ErrNotFound) {
+				return ErrRevisionMismatch
+			}
+			return err
+		}
+		return nil
+	})
 }

@@ -12,67 +12,77 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const createRateLimitBucket = `-- name: CreateRateLimitBucket :exec
+const createRateLimitBucket = `-- name: CreateRateLimitBucket :one
 INSERT INTO
-    "rate_limit_buckets" ("id", "last_reset_at", "version", "consumed", "last_consumed_at")
+    "rate_limit_buckets" (
+        "id",
+        "last_reset_at",
+        "consumed",
+        "last_consumed_at"
+    )
 VALUES
-    ($1, $2, $3, $4, $5)
+    ($1, $2, $3, $4)
+ON CONFLICT DO NOTHING
+RETURNING
+    id, created_at, last_reset_at, consumed, last_consumed_at
 `
 
 type CreateRateLimitBucketParams struct {
 	ID             string
 	LastResetAt    time.Time
-	Version        int32
 	Consumed       int64
 	LastConsumedAt pgtype.Timestamptz
 }
 
-func (q *Queries) CreateRateLimitBucket(ctx context.Context, arg *CreateRateLimitBucketParams) error {
-	_, err := q.db.Exec(ctx, createRateLimitBucket,
+func (q *Queries) CreateRateLimitBucket(ctx context.Context, arg *CreateRateLimitBucketParams) (RateLimitBucket, error) {
+	row := q.db.QueryRow(ctx, createRateLimitBucket,
 		arg.ID,
 		arg.LastResetAt,
-		arg.Version,
 		arg.Consumed,
 		arg.LastConsumedAt,
 	)
-	return err
-}
-
-const getRateLimitBucket = `-- name: GetRateLimitBucket :one
-SELECT
-    id, created_at, last_reset_at, version, consumed, last_consumed_at
-FROM
-    "rate_limit_buckets"
-WHERE
-    "id" = $1
-`
-
-func (q *Queries) GetRateLimitBucket(ctx context.Context, id string) (RateLimitBucket, error) {
-	row := q.db.QueryRow(ctx, getRateLimitBucket, id)
 	var i RateLimitBucket
 	err := row.Scan(
 		&i.ID,
 		&i.CreatedAt,
 		&i.LastResetAt,
-		&i.Version,
 		&i.Consumed,
 		&i.LastConsumedAt,
 	)
 	return i, err
 }
 
-const updateRateLimitBucket = `-- name: UpdateRateLimitBucket :one
+const getRateLimitBucketForUpdate = `-- name: GetRateLimitBucketForUpdate :one
+SELECT
+    id, created_at, last_reset_at, consumed, last_consumed_at
+FROM
+    "rate_limit_buckets"
+WHERE
+    "id" = $1
+FOR UPDATE
+`
+
+func (q *Queries) GetRateLimitBucketForUpdate(ctx context.Context, id string) (RateLimitBucket, error) {
+	row := q.db.QueryRow(ctx, getRateLimitBucketForUpdate, id)
+	var i RateLimitBucket
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.LastResetAt,
+		&i.Consumed,
+		&i.LastConsumedAt,
+	)
+	return i, err
+}
+
+const updateRateLimitBucket = `-- name: UpdateRateLimitBucket :exec
 UPDATE "rate_limit_buckets"
 SET
     "last_reset_at" = $1,
     "consumed" = $2,
-    "last_consumed_at" = $3,
-    "version" = "version" + 1
+    "last_consumed_at" = $3
 WHERE
     "id" = $4
-    AND "version" = $5
-RETURNING
-    id, created_at, last_reset_at, version, consumed, last_consumed_at
 `
 
 type UpdateRateLimitBucketParams struct {
@@ -80,25 +90,14 @@ type UpdateRateLimitBucketParams struct {
 	Consumed       int64
 	LastConsumedAt pgtype.Timestamptz
 	ID             string
-	Version        int32
 }
 
-func (q *Queries) UpdateRateLimitBucket(ctx context.Context, arg *UpdateRateLimitBucketParams) (RateLimitBucket, error) {
-	row := q.db.QueryRow(ctx, updateRateLimitBucket,
+func (q *Queries) UpdateRateLimitBucket(ctx context.Context, arg *UpdateRateLimitBucketParams) error {
+	_, err := q.db.Exec(ctx, updateRateLimitBucket,
 		arg.LastResetAt,
 		arg.Consumed,
 		arg.LastConsumedAt,
 		arg.ID,
-		arg.Version,
 	)
-	var i RateLimitBucket
-	err := row.Scan(
-		&i.ID,
-		&i.CreatedAt,
-		&i.LastResetAt,
-		&i.Version,
-		&i.Consumed,
-		&i.LastConsumedAt,
-	)
-	return i, err
+	return err
 }

@@ -1,15 +1,14 @@
 -- +goose Up
-CREATE TABLE
-    "phone_numbers" (
-        "id" ulid PRIMARY KEY NOT NULL,
-        "created_at" TIMESTAMPTZ DEFAULT NOW() NOT NULL,
-        "version" INTEGER DEFAULT 1 NOT NULL,
-        "user_id" ulid NOT NULL,
-        "value" citext NOT NULL UNIQUE,
-        "is_primary" BOOLEAN DEFAULT FALSE NOT NULL,
-        "is_verified" BOOLEAN DEFAULT FALSE NOT NULL,
-        "last_verified_at" TIMESTAMPTZ DEFAULT NOW() NOT NULL
-    );
+CREATE TABLE "phone_numbers" (
+    "id" ulid PRIMARY KEY NOT NULL,
+    "created_at" TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    "version" INTEGER DEFAULT 1 NOT NULL,
+    "user_id" ulid NOT NULL,
+    "value" citext NOT NULL UNIQUE,
+    "is_primary" BOOLEAN DEFAULT FALSE NOT NULL,
+    "is_verified" BOOLEAN DEFAULT FALSE NOT NULL,
+    "last_verified_at" TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
 
 CREATE INDEX "phone_numbers_version_idx" ON "phone_numbers" ("version");
 

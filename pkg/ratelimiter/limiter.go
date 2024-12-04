@@ -3,7 +3,6 @@ package ratelimiter
 import (
 	"context"
 	"errors"
-	"sync"
 	"time"
 )
 
@@ -14,7 +13,7 @@ type BasicLimiter[T any] struct {
 	hashFunc   HashFunc[T]
 	resetAfter time.Duration
 	backOffs   []time.Duration
-	store      Store
+	store      StoreTX
 	limit      int
 }
 
@@ -23,7 +22,7 @@ type BasicLimiterOption[T any] struct {
 	Limit      int
 	ResetAfter time.Duration
 	HashFunc   HashFunc[T]
-	Store      Store
+	Store      StoreTX
 	BackOffs   []time.Duration
 }
 
@@ -57,35 +56,12 @@ func NewBasicLimiter[T any](option *BasicLimiterOption[T]) (*BasicLimiter[T], er
 	}, nil
 }
 
-func (l *BasicLimiter[T]) Bucket(ctx context.Context, v T) (*Bucket[T], error) {
+func (l *BasicLimiter[T]) Bucket(ctx context.Context, v T) *Bucket[T] {
 	id := l.label + ":" + l.hashFunc(v)
-	b, err := l.store.Get(ctx, id)
-	if err != nil {
-		if !errors.Is(err, ErrNotFound) {
-			return nil, err
-		}
-
-		newB := BucketCtx{
-			ID:                 id,
-			Revision:           1,
-			LastResetAt:        time.Now(),
-			ConsumedTokenCount: 0,
-			LastConsumedAt:     time.Time{},
-		}
-
-		if err := l.store.Create(ctx, newB); err != nil {
-			if errors.Is(err, ErrAlreadyExist) {
-				return nil, ErrRevisionMismatch
-			}
-		}
-		b = newB
-	}
-
 	return &Bucket[T]{
-		mu:  sync.Mutex{},
-		l:   l,
-		ctx: &b,
-	}, nil
+		l:  l,
+		id: id,
+	}
 }
 
 func String(s string) string {
