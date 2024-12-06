@@ -21,8 +21,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var ErrServerNotStarted = errors.New("server already started")
-var ErrServerAlreadyStarted = errors.New("server not started")
+var (
+	ErrServerNotStarted     = errors.New("server already started")
+	ErrServerAlreadyStarted = errors.New("server not started")
+)
 
 var (
 	mailerJobsStreamName = "mailer:jobs"

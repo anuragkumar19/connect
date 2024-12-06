@@ -22,6 +22,7 @@ func New(store database.Store, m *mailer.Client, r ratelimiter.Service) Users {
 		rateLimiter: r,
 	}
 }
+
 func (s *Users) WithTx(tx pgx.Tx) Users {
 	ns := *s
 	ns.store = ns.store.WithTx(tx)

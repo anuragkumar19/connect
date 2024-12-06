@@ -5,15 +5,13 @@ import "time"
 // TODO: append build info with right key in prometheus metrics
 // TODO: append build info in expvar
 
-var (
-	info = &buildInfo{
-		bin:       "",
-		version:   "0.0.1",
-		commit:    "NA",
-		branch:    "main",
-		timestamp: time.Now(),
-	}
-)
+var info = &buildInfo{
+	bin:       "",
+	version:   "0.0.1",
+	commit:    "NA",
+	branch:    "main",
+	timestamp: time.Now(),
+}
 
 type BuildInfo interface {
 	Bin() string

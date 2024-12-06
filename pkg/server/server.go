@@ -16,8 +16,10 @@ import (
 
 // TODO: http.Handler with tracing and metrics
 
-var ErrServerNotStarted = errors.New("server already started")
-var ErrServerAlreadyStarted = errors.New("server not started")
+var (
+	ErrServerNotStarted     = errors.New("server already started")
+	ErrServerAlreadyStarted = errors.New("server not started")
+)
 
 type Server struct {
 	logger *zerolog.Logger
