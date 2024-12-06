@@ -19,7 +19,7 @@ type Server struct {
 	config *Config
 }
 
-func NewServer(config *Config, queries *database.Queries, nt *nats.NATS, s *storage.Storage, mailerClient *smtp.SMTP) (Server, error) {
+func NewServer(config *Config, store database.Store, nt *nats.NATS, s *storage.Storage, mailerClient *smtp.SMTP) (Server, error) {
 	if err := config.Validate(); err != nil {
 		return Server{}, fmt.Errorf("invalid metrics server config: %w", err)
 	}

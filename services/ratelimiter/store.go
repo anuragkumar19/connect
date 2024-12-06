@@ -8,45 +8,42 @@ import (
 	"github.com/anuragkumar19/connect/pkg/ratelimiter"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type databaseStoreTx struct {
-	queries *database.Queries
-	db      *pgxpool.Pool
+	store database.Store
 }
 
 var _ ratelimiter.StoreTX = (*databaseStoreTx)(nil)
 
-func newDatabaseStore(queries *database.Queries, db *pgxpool.Pool) *databaseStoreTx {
+func newDatabaseStore(store database.Store) *databaseStoreTx {
 	return &databaseStoreTx{
-		queries: queries,
-		db:      db,
+		store: store,
 	}
 }
 
 func (s *databaseStoreTx) BeginFunc(ctx context.Context, txFunc func(ratelimiter.Store) error) error {
-	return pgx.BeginFunc(ctx, s.db, func(tx pgx.Tx) error {
+	return s.store.BeginFunc(ctx, func(store database.Store) error {
 		return txFunc(&databaseStore{
-			queries: s.queries.WithTx(tx),
+			store: store,
 		})
 	})
 }
 
 type databaseStore struct {
-	queries *database.Queries
+	store database.Store
 }
 
 var _ ratelimiter.Store = (*databaseStore)(nil)
 
 func (s *databaseStore) Get(ctx context.Context, id string) (ratelimiter.BucketCtx, error) {
-	bucket, err := s.queries.GetRateLimitBucketForUpdate(ctx, id)
+	bucket, err := s.store.GetRateLimitBucketForUpdate(ctx, id)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
 			return ratelimiter.BucketCtx{}, err
 		}
 		bCtx := ratelimiter.NewBucketCtx(id)
-		newBucket, err := s.queries.CreateRateLimitBucket(ctx, &database.CreateRateLimitBucketParams{
+		newBucket, err := s.store.CreateRateLimitBucket(ctx, &database.CreateRateLimitBucketParams{
 			ID:          bCtx.ID,
 			LastResetAt: bCtx.LastResetAt,
 			Consumed:    int64(bCtx.ConsumedTokenCount),
@@ -70,7 +67,7 @@ func (s *databaseStore) Get(ctx context.Context, id string) (ratelimiter.BucketC
 }
 
 func (s *databaseStore) Update(ctx context.Context, bucket ratelimiter.BucketCtx) error {
-	return s.queries.UpdateRateLimitBucket(ctx, &database.UpdateRateLimitBucketParams{
+	return s.store.UpdateRateLimitBucket(ctx, &database.UpdateRateLimitBucketParams{
 		LastResetAt: bucket.LastResetAt,
 		Consumed:    int64(bucket.ConsumedTokenCount),
 		LastConsumedAt: pgtype.Timestamptz{

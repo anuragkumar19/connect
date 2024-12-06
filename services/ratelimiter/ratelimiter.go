@@ -7,7 +7,7 @@ import (
 
 	"github.com/anuragkumar19/connect/database"
 	"github.com/anuragkumar19/connect/pkg/ratelimiter"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5"
 )
 
 type Ratelimiter struct {
@@ -18,15 +18,15 @@ type Ratelimiter struct {
 
 var _ Service = (*Ratelimiter)(nil)
 
-func New(queries *database.Queries, db *pgxpool.Pool) (Ratelimiter, error) {
-	store := newDatabaseStore(queries, db)
+func New(store database.Store) (Ratelimiter, error) {
+	rateLimiterStore := newDatabaseStore(store)
 
 	userTriggeredEmailLimiter, err := ratelimiter.NewBasicLimiter(&ratelimiter.BasicLimiterOption[string]{
 		HashFunc:   ratelimiter.String,
 		Label:      "user_triggered_email",
 		Limit:      20,
 		ResetAfter: 24 * time.Hour,
-		Store:      store,
+		Store:      rateLimiterStore,
 		BackOffs:   []time.Duration{time.Minute, 2 * time.Minute, 3 * time.Minute, 5 * time.Minute, 10 * time.Minute, 30 * time.Minute},
 	})
 	if err != nil {
@@ -34,9 +34,15 @@ func New(queries *database.Queries, db *pgxpool.Pool) (Ratelimiter, error) {
 	}
 
 	return Ratelimiter{
-		store:                     store,
+		store:                     rateLimiterStore,
 		userTriggeredEmailLimiter: userTriggeredEmailLimiter,
 	}, nil
+}
+
+func (s *Ratelimiter) WithTx(tx pgx.Tx) Ratelimiter {
+	ns := *s
+	ns.store = newDatabaseStore(ns.store.store.WithTx(tx))
+	return ns
 }
 
 func (s *Ratelimiter) UserTriggeredEmailBucket(ctx context.Context, email string) *ratelimiter.Bucket[string] {

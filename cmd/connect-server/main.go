@@ -111,7 +111,7 @@ func main() {
 		log.Fatal().Err(err).Msg("smtp init failed")
 	}
 
-	database := database.New(pgConn)
+	database := database.NewStore(pgConn)
 
 	apiConf, err := api.AutoConfig()
 	if err != nil {

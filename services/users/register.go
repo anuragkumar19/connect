@@ -7,7 +7,6 @@ import (
 	"github.com/anuragkumar19/connect/database"
 	"github.com/anuragkumar19/connect/pkg/argon2id"
 	"github.com/anuragkumar19/connect/services/serviceerrors"
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/oklog/ulid/v2"
 )
@@ -18,9 +17,8 @@ func (s *Users) Register(ctx context.Context, cmd RegisterCmd) (RegisterResult, 
 		return result, err
 	}
 
-	if err := pgx.BeginFunc(ctx, s.db, func(tx pgx.Tx) error {
-		queries := s.queries.WithTx(tx)
-		available, err := queries.IsUsernameAvailable(ctx, cmd.Username)
+	if err := s.store.BeginFunc(ctx, func(store database.Store) error {
+		available, err := store.IsUsernameAvailable(ctx, cmd.Username)
 		if err != nil {
 			return serviceerrors.NewInternalError(err)
 		}
@@ -35,7 +33,7 @@ func (s *Users) Register(ctx context.Context, cmd RegisterCmd) (RegisterResult, 
 		emailId := ulid.Make()
 		phoneNumberId := ulid.Make()
 
-		if err := queries.CreateUser(ctx, &database.CreateUserParams{
+		if err := store.CreateUser(ctx, &database.CreateUserParams{
 			ID:           userId,
 			IsRegistered: false,
 			Name:         cmd.Name,
@@ -56,7 +54,7 @@ func (s *Users) Register(ctx context.Context, cmd RegisterCmd) (RegisterResult, 
 		if err != nil {
 			return serviceerrors.NewInternalError(err)
 		}
-		if err := queries.CreatePassword(ctx, &database.CreatePasswordParams{
+		if err := store.CreatePassword(ctx, &database.CreatePasswordParams{
 			ID:       ulid.Make(),
 			IsActive: true,
 			UserID:   userId,
@@ -66,7 +64,7 @@ func (s *Users) Register(ctx context.Context, cmd RegisterCmd) (RegisterResult, 
 		}
 
 		if cmd.Method == Email {
-			available, err := queries.IsEmailAvailable(ctx, cmd.Email)
+			available, err := store.IsEmailAvailable(ctx, cmd.Email)
 			if err != nil {
 				return serviceerrors.NewInternalError(err)
 			}
@@ -74,7 +72,7 @@ func (s *Users) Register(ctx context.Context, cmd RegisterCmd) (RegisterResult, 
 				return serviceerrors.NewFieldError("Email", "A account is already linked to provided email")
 			}
 
-			if err := queries.CreateEmail(ctx, &database.CreateEmailParams{
+			if err := store.CreateEmail(ctx, &database.CreateEmailParams{
 				ID:         emailId,
 				UserID:     userId,
 				Value:      cmd.Email,
@@ -91,7 +89,7 @@ func (s *Users) Register(ctx context.Context, cmd RegisterCmd) (RegisterResult, 
 		}
 
 		if cmd.Method == PhoneNumber {
-			available, err := queries.IsPhoneNumberAvailable(ctx, cmd.PhoneNumber)
+			available, err := store.IsPhoneNumberAvailable(ctx, cmd.PhoneNumber)
 			if err != nil {
 				return serviceerrors.NewInternalError(err)
 			}
@@ -99,7 +97,7 @@ func (s *Users) Register(ctx context.Context, cmd RegisterCmd) (RegisterResult, 
 				return serviceerrors.NewFieldError("PhoneNumber", "A account is already linked to provided phoneNumber")
 			}
 
-			if err := queries.CreatePhoneNumber(ctx, &database.CreatePhoneNumberParams{
+			if err := store.CreatePhoneNumber(ctx, &database.CreatePhoneNumberParams{
 				ID:         phoneNumberId,
 				UserID:     userId,
 				Value:      cmd.PhoneNumber,
