@@ -4,11 +4,15 @@ CREATE TABLE "emails" (
     "created_at" TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     "version" INTEGER DEFAULT 1 NOT NULL,
     "user_id" ulid NOT NULL,
-    "value" citext NOT NULL UNIQUE,
+    "value" citext NOT NULL,
     "is_primary" BOOLEAN DEFAULT FALSE NOT NULL,
     "is_verified" BOOLEAN DEFAULT FALSE NOT NULL,
-    "last_verified_at" TIMESTAMPTZ DEFAULT NOW() NOT NULL
+    "last_verified_at" TIMESTAMPTZ
 );
+
+CREATE UNIQUE INDEX "emails_value_verified_unique_idx" ON "emails" ("value", "is_verified")
+WHERE
+    "is_verified";
 
 CREATE INDEX "emails_version_idx" ON "emails" ("version");
 

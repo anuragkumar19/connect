@@ -42,6 +42,11 @@ func NewBasicLimiter[T any](option *BasicLimiterOption[T]) (*BasicLimiter[T], er
 	if len(option.BackOffs) >= option.Limit {
 		return nil, errors.New("backOffs length must be less than limit")
 	}
+	for _, d := range option.BackOffs {
+		if d <= 0 {
+			return nil, errors.New("backOffs cannot be zero or negative")
+		}
+	}
 	if option.Store == nil {
 		return nil, errors.New("store cannot be nil")
 	}

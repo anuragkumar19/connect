@@ -1,10 +1,12 @@
 package users
 
 import (
+	"context"
 	"regexp"
 	"strings"
 	"time"
 
+	"github.com/anuragkumar19/connect/services/serviceerrors"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 )
@@ -51,14 +53,21 @@ func (s *RegisterCmd) Transform() *RegisterCmd {
 }
 
 // TODO: use ruled defined in validation.go
-func (s RegisterCmd) Validate() error {
-	return validation.ValidateStruct(
+func (s *RegisterCmd) Validate(ctx context.Context) error {
+	if err := validation.ValidateStructWithContext(
+		ctx,
 		&s,
-		validation.Field(&s.Email, validation.Required, is.EmailFormat),
+		validation.Field(&s.Email, validation.Required.When(s.Method == Email), is.EmailFormat),
 		validation.Field(&s.Method, validation.Required, validation.In(Email, PhoneNumber)),
 		validation.Field(&s.Name, validation.Required, validation.Length(2, 30)),
 		validation.Field(&s.Password, validation.Required, validation.Length(8, 250)),
-		validation.Field(&s.PhoneNumber, validation.Required),
+		validation.Field(&s.PhoneNumber, validation.Required.When(s.Method == PhoneNumber)),
 		validation.Field(&s.Username, validation.Required, validation.Length(4, 30), validation.Match(regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_]*$")).Error("can start with alphabets only and contains only alphabets, numbers and underscores")),
-	)
+	); err != nil {
+		if _, ok := err.(validation.InternalError); ok {
+			return serviceerrors.NewInternalError(err)
+		}
+		return serviceerrors.NewInvalidArgumentFromOzzoErrors(err)
+	}
+	return nil
 }

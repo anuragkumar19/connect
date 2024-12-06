@@ -2,7 +2,6 @@ package ratelimiter
 
 import (
 	"context"
-	"errors"
 	"time"
 )
 
@@ -77,9 +76,6 @@ func (b *Bucket[T]) Consume(ctx context.Context) error {
 		bucket.LastConsumedAt = now
 
 		if err := s.Update(ctx, bucket); err != nil {
-			if errors.Is(err, ErrNotFound) {
-				return ErrRevisionMismatch
-			}
 			return err
 		}
 		return nil

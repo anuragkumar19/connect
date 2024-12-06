@@ -1,4 +1,4 @@
-package errors
+package serviceerrors
 
 type messageErr struct {
 	msg string
@@ -20,10 +20,10 @@ func (e *messageErr) InternalError() error {
 	return e.err
 }
 
-func New(tp ErrType, message string, err error) error {
+func New(tp ErrType, message string, internalErr error) error {
 	return &messageErr{
 		msg: message,
-		err: err,
+		err: internalErr,
 		tp:  tp,
 	}
 }

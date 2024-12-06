@@ -7,5 +7,5 @@ import (
 )
 
 type Service interface {
-	UserTriggeredEmailBucket(ctx context.Context, email string) (ratelimiter.Bucket[string], error)
+	UserTriggeredEmailBucket(ctx context.Context, email string) *ratelimiter.Bucket[string]
 }

@@ -9,7 +9,43 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	ulid "github.com/oklog/ulid/v2"
 )
+
+const createUser = `-- name: CreateUser :exec
+INSERT INTO
+    "users" (
+        "id",
+        "is_registered",
+        "name",
+        "username",
+        "primary_email_id",
+        "primary_phone_number_id"
+    )
+VALUES
+    ($1, $2, $3, $4, $5, $6)
+`
+
+type CreateUserParams struct {
+	ID                   ulid.ULID
+	IsRegistered         bool
+	Name                 string
+	Username             string
+	PrimaryEmailID       ULIDValue
+	PrimaryPhoneNumberID ULIDValue
+}
+
+func (q *Queries) CreateUser(ctx context.Context, arg *CreateUserParams) error {
+	_, err := q.db.Exec(ctx, createUser,
+		arg.ID,
+		arg.IsRegistered,
+		arg.Name,
+		arg.Username,
+		arg.PrimaryEmailID,
+		arg.PrimaryPhoneNumberID,
+	)
+	return err
+}
 
 const isUsernameAvailable = `-- name: IsUsernameAvailable :one
 SELECT
@@ -20,6 +56,7 @@ SELECT
             "users"
         WHERE
             "users"."username" = $1
+            AND "users"."is_registered"
     )
     AND NOT EXISTS (
         SELECT

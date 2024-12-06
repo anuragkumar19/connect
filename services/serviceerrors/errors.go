@@ -1,4 +1,4 @@
-package errors
+package serviceerrors
 
 type ServiceError interface {
 	error

@@ -19,11 +19,11 @@ type Email struct {
 	Value          string
 	IsPrimary      bool
 	IsVerified     bool
-	LastVerifiedAt time.Time
+	LastVerifiedAt pgtype.Timestamptz
 }
 
 type Password struct {
-	ID          int64
+	ID          ulid.ULID
 	CreatedAt   time.Time
 	Version     int32
 	AbandonedAt pgtype.Timestamptz
@@ -40,7 +40,7 @@ type PhoneNumber struct {
 	Value          string
 	IsPrimary      bool
 	IsVerified     bool
-	LastVerifiedAt time.Time
+	LastVerifiedAt pgtype.Timestamptz
 }
 
 type RateLimitBucket struct {
@@ -59,6 +59,7 @@ type User struct {
 	ID                   ulid.ULID
 	CreatedAt            time.Time
 	Version              int32
+	IsRegistered         bool
 	Name                 string
 	Username             string
 	Dob                  pgtype.Date
@@ -68,7 +69,7 @@ type User struct {
 	AvatarPath           pgtype.Text
 	BannerPath           pgtype.Text
 	LastActiveAt         time.Time
-	PrimaryEmailID       ulid.ULID
+	PrimaryEmailID       ULIDValue
 	PrimaryPhoneNumberID ULIDValue
 	IsMfaEnabled         bool
 	IsBot                bool
@@ -78,7 +79,7 @@ type User struct {
 
 type VerificationToken struct {
 	Token         string
-	ID            int64
+	ID            ulid.ULID
 	CreatedAt     time.Time
 	ExpireAt      time.Time
 	UserID        ulid.ULID

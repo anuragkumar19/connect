@@ -11,8 +11,15 @@ import (
 )
 
 type Querier interface {
+	CreateEmail(ctx context.Context, arg *CreateEmailParams) error
+	CreatePassword(ctx context.Context, arg *CreatePasswordParams) error
+	CreatePhoneNumber(ctx context.Context, arg *CreatePhoneNumberParams) error
 	CreateRateLimitBucket(ctx context.Context, arg *CreateRateLimitBucketParams) (RateLimitBucket, error)
+	CreateUser(ctx context.Context, arg *CreateUserParams) error
+	CreateVerificationToken(ctx context.Context, arg *CreateVerificationTokenParams) error
 	GetRateLimitBucketForUpdate(ctx context.Context, id string) (RateLimitBucket, error)
+	IsEmailAvailable(ctx context.Context, value string) (bool, error)
+	IsPhoneNumberAvailable(ctx context.Context, value string) (bool, error)
 	IsUsernameAvailable(ctx context.Context, username string) (pgtype.Bool, error)
 	UpdateRateLimitBucket(ctx context.Context, arg *UpdateRateLimitBucketParams) error
 }

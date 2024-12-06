@@ -1,7 +1,7 @@
 -- +goose Up
 CREATE TABLE "verification_tokens" (
     "token" TEXT PRIMARY KEY NOT NULL,
-    "id" BIGSERIAL UNIQUE NOT NULL,
+    "id" ulid UNIQUE NOT NULL,
     "created_at" TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     "expire_at" TIMESTAMPTZ NOT NULL,
     "user_id" ulid NOT NULL,

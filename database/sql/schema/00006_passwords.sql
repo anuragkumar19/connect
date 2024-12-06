@@ -1,6 +1,6 @@
 -- +goose Up
 CREATE TABLE "passwords" (
-    "id" BIGSERIAL PRIMARY KEY NOT NULL,
+    "id" ulid PRIMARY KEY,
     "created_at" TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     "version" INTEGER DEFAULT 1 NOT NULL,
     "abandoned_at" TIMESTAMPTZ,
@@ -8,6 +8,10 @@ CREATE TABLE "passwords" (
     "user_id" ulid NOT NULL,
     "value" TEXT NOT NULL
 );
+
+CREATE UNIQUE INDEX "passwords_value_active_unique_idx" ON "passwords" ("value", "is_active")
+WHERE
+    "is_active";
 
 CREATE INDEX "passwords_version_idx" ON "passwords" ("version");
 
