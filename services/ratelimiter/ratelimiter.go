@@ -7,7 +7,6 @@ import (
 
 	"github.com/anuragkumar19/connect/database"
 	"github.com/anuragkumar19/connect/pkg/ratelimiter"
-	"github.com/jackc/pgx/v5"
 )
 
 type Ratelimiter struct {
@@ -37,12 +36,6 @@ func New(store database.Store) (Ratelimiter, error) {
 		store:                     rateLimiterStore,
 		userTriggeredEmailLimiter: userTriggeredEmailLimiter,
 	}, nil
-}
-
-func (s *Ratelimiter) WithTx(tx pgx.Tx) Ratelimiter {
-	ns := *s
-	ns.store = newDatabaseStore(ns.store.store.WithTx(tx))
-	return ns
 }
 
 func (s *Ratelimiter) UserTriggeredEmailBucket(ctx context.Context, email string) *ratelimiter.Bucket[string] {

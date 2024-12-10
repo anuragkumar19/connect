@@ -3,12 +3,19 @@ package users
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/anuragkumar19/connect/database"
-	"github.com/anuragkumar19/connect/pkg/argon2id"
+	"github.com/anuragkumar19/connect/pkg/crypto"
 	"github.com/anuragkumar19/connect/services/serviceerrors"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/oklog/ulid/v2"
+	"github.com/rs/zerolog/log"
+)
+
+var (
+	otpLength   = 6
+	otpLifetime = time.Hour
 )
 
 func (s *Users) Register(ctx context.Context, cmd RegisterCmd) (RegisterResult, error) {
@@ -33,6 +40,12 @@ func (s *Users) Register(ctx context.Context, cmd RegisterCmd) (RegisterResult, 
 		emailId := ulid.Make()
 		phoneNumberId := ulid.Make()
 
+		token, err := crypto.RandomToken()
+		if err != nil {
+			return serviceerrors.NewInternalError(err)
+		}
+		result.Token = token
+
 		if err := store.CreateUser(ctx, &database.CreateUserParams{
 			ID:           userId,
 			IsRegistered: false,
@@ -50,7 +63,7 @@ func (s *Users) Register(ctx context.Context, cmd RegisterCmd) (RegisterResult, 
 			return serviceerrors.NewInternalError(err)
 		}
 
-		h, err := argon2id.CreateHash(cmd.Password, argon2id.DefaultParams) // TODO: use passwords service, we can also use new db domain hashed
+		hashedPass, err := crypto.GenerateFromPassword(cmd.Password)
 		if err != nil {
 			return serviceerrors.NewInternalError(err)
 		}
@@ -58,7 +71,7 @@ func (s *Users) Register(ctx context.Context, cmd RegisterCmd) (RegisterResult, 
 			ID:       ulid.Make(),
 			IsActive: true,
 			UserID:   userId,
-			Value:    h,
+			Value:    hashedPass,
 		}); err != nil {
 			return serviceerrors.NewInternalError(err)
 		}
@@ -85,30 +98,63 @@ func (s *Users) Register(ctx context.Context, cmd RegisterCmd) (RegisterResult, 
 				return serviceerrors.NewInternalError(err)
 			}
 
-			// otp+send_email
-		}
-
-		if cmd.Method == PhoneNumber {
-			available, err := store.IsPhoneNumberAvailable(ctx, cmd.PhoneNumber)
+			opt, err := crypto.RandomNumber(otpLength)
 			if err != nil {
 				return serviceerrors.NewInternalError(err)
 			}
-			if !available {
-				return serviceerrors.NewFieldError("PhoneNumber", "A account is already linked to provided phoneNumber")
+			hashedOtp, err := crypto.GenerateFromPassword(opt)
+			if err != nil {
+				return serviceerrors.NewInternalError(err)
 			}
-
-			if err := store.CreatePhoneNumber(ctx, &database.CreatePhoneNumberParams{
-				ID:         phoneNumberId,
-				UserID:     userId,
-				Value:      cmd.PhoneNumber,
-				IsPrimary:  true,
-				IsVerified: false,
-				LastVerifiedAt: pgtype.Timestamptz{
+			expiry := time.Now().Add(otpLifetime)
+			if err := store.CreateVerificationToken(ctx, &database.CreateVerificationTokenParams{
+				Token:    token,
+				ID:       ulid.Make(),
+				ExpireAt: expiry,
+				UserID:   userId,
+				EmailID: database.ULIDValue{
+					Valid: true,
+					ULID:  emailId,
+				},
+				PhoneNumberID: database.ULIDValue{
 					Valid: false,
 				},
+				Otp: hashedOtp,
 			}); err != nil {
 				return serviceerrors.NewInternalError(err)
 			}
+
+			log.Info().Str("otp", opt).Str("token", token).Str("email", cmd.Email).Msg("email send") // TODO: remove
+			// TODO: s.mailer.SendEmail(ctx, &mailerv1.SendEmail{})
+
+			bucket := s.rateLimiter.UserTriggeredEmailBucket(ctx, cmd.Email)
+			if err := bucket.Consume(ctx); err != nil {
+				return serviceerrors.NewInternalError(err)
+			}
+		}
+
+		if cmd.Method == PhoneNumber {
+			return serviceerrors.New(serviceerrors.TypeUnimplemented, "Phone number registration not allowed yet", nil)
+			// available, err := store.IsPhoneNumberAvailable(ctx, cmd.PhoneNumber)
+			// if err != nil {
+			// 	return serviceerrors.NewInternalError(err)
+			// }
+			// if !available {
+			// 	return serviceerrors.NewFieldError("PhoneNumber", "A account is already linked to provided phoneNumber")
+			// }
+
+			// if err := store.CreatePhoneNumber(ctx, &database.CreatePhoneNumberParams{
+			// 	ID:         phoneNumberId,
+			// 	UserID:     userId,
+			// 	Value:      cmd.PhoneNumber,
+			// 	IsPrimary:  true,
+			// 	IsVerified: false,
+			// 	LastVerifiedAt: pgtype.Timestamptz{
+			// 		Valid: false,
+			// 	},
+			// }); err != nil {
+			// 	return serviceerrors.NewInternalError(err)
+			// }
 		}
 
 		return nil

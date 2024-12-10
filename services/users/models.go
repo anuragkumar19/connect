@@ -28,8 +28,7 @@ type RegisterCmd struct {
 }
 
 type RegisterResult struct {
-	Token               string
-	ResendCodeAfterTime time.Time
+	Token string
 }
 
 type ResendVerificationCodeCmd struct {

@@ -8,10 +8,9 @@
 //
 // It enforces use of the Argon2id algorithm variant and cryptographically-secure
 // random salts.
-package argon2id
+package crypto
 
 import (
-	"crypto/rand"
 	"crypto/subtle"
 	"encoding/base64"
 	"errors"
@@ -19,6 +18,8 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/anuragkumar19/connect/pkg/env"
+	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/argon2"
 )
 
@@ -53,6 +54,47 @@ var DefaultParams = &Params{
 	Parallelism: uint8(runtime.NumCPU()),
 	SaltLength:  16,
 	KeyLength:   32,
+}
+
+func init() {
+	var memory uint32
+	if err := env.Uint32("ARGON2ID_MEMORY_KIBI_BYTES", &memory); err != nil {
+		log.Error().Err(err).Msg("argon2id memory param cannot be parsed: continuing with default value")
+	} else {
+		DefaultParams.Memory = memory
+	}
+	var iterations uint32
+	if err := env.Uint32("ARGON2ID_ITERATIONS", &iterations); err != nil {
+		log.Error().Err(err).Msg("argon2id iterations param cannot be parsed: continuing with default value")
+	} else {
+		DefaultParams.Iterations = iterations
+	}
+	var parallelism uint8
+	if err := env.Uint8("ARGON2ID_PARALLELISM", &parallelism); err != nil {
+		log.Error().Err(err).Msg("argon2id parallelism param cannot be parsed: continuing with default value")
+	} else if parallelism == 0 {
+		log.Error().Err(err).Msg("argon2id parallelism param cannot be zero: continuing with default value")
+	} else {
+		DefaultParams.Parallelism = parallelism
+	}
+	var saltLength uint32
+	if err := env.Uint32("ARGON2ID_SALT_LENGTH", &saltLength); err != nil {
+		log.Error().Err(err).Msg("argon2id saltLength param cannot be parsed: continuing with default value")
+	} else {
+		DefaultParams.SaltLength = saltLength
+		if saltLength < 16 {
+			log.Warn().Msg(fmt.Sprintf("argon2id recommended salt length is 16: set value is %d", saltLength))
+		}
+	}
+	var keyLength uint32
+	if err := env.Uint32("ARGON2ID_KEY_LENGTH", &keyLength); err != nil {
+		log.Error().Err(err).Msg("argon2id keyLength param cannot be parsed: continuing with default value")
+		if keyLength < 16 {
+			log.Warn().Msg(fmt.Sprintf("argon2id minimum recommended key length is 16: set value is %d", keyLength))
+		}
+	} else {
+		DefaultParams.KeyLength = keyLength
+	}
 }
 
 // Params describes the input parameters used by the Argon2id algorithm. The
@@ -106,11 +148,15 @@ func CreateHash(password string, params *Params) (hash string, err error) {
 	return hash, nil
 }
 
-// ComparePasswordAndHash performs a constant-time comparison between a
+func GenerateFromPassword(password string) (hash string, err error) {
+	return CreateHash(password, DefaultParams)
+}
+
+// CompareHashAndPassword performs a constant-time comparison between a
 // plain-text password and Argon2id hash, using the parameters and salt
 // contained in the hash. It returns true if they match, otherwise it returns
 // false.
-func ComparePasswordAndHash(password, hash string) (match bool, err error) {
+func CompareHashAndPassword(hash, password string) (match bool, err error) {
 	match, _, err = CheckHash(password, hash)
 	return match, err
 }
@@ -136,16 +182,6 @@ func CheckHash(password, hash string) (match bool, params *Params, err error) {
 		return true, params, nil
 	}
 	return false, params, nil
-}
-
-func generateRandomBytes(n uint32) ([]byte, error) {
-	b := make([]byte, n)
-	_, err := rand.Read(b)
-	if err != nil {
-		return nil, err
-	}
-
-	return b, nil
 }
 
 // DecodeHash expects a hash created from this package, and parses it to return the params used to

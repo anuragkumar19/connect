@@ -61,6 +61,34 @@ func Int64(key string, ptr *int64) error {
 	return nil
 }
 
+func Uint32(key string, ptr *uint32) error {
+	if v := os.Getenv(key); v != "" {
+		parsed, err := strconv.ParseInt(v, 10, 0)
+		if err != nil {
+			return fmt.Errorf("%w : %w", parseErr(key), err)
+		}
+		if parsed < 0 || parsed > math.MaxUint32 {
+			return fmt.Errorf("%w : value not in range of uint32", parseErr(key))
+		}
+		*ptr = uint32(parsed)
+	}
+	return nil
+}
+
+func Uint8(key string, ptr *uint8) error {
+	if v := os.Getenv(key); v != "" {
+		parsed, err := strconv.ParseInt(v, 10, 0)
+		if err != nil {
+			return fmt.Errorf("%w : %w", parseErr(key), err)
+		}
+		if parsed < 0 || parsed > math.MaxUint8 {
+			return fmt.Errorf("%w : value not in range of int8", parseErr(key))
+		}
+		*ptr = uint8(parsed)
+	}
+	return nil
+}
+
 func Bool(key string, ptr *bool) error {
 	if v := os.Getenv(key); v != "" {
 		parsed, err := strconv.ParseBool(v)

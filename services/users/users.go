@@ -4,7 +4,6 @@ import (
 	"github.com/anuragkumar19/connect/database"
 	"github.com/anuragkumar19/connect/mailer"
 	"github.com/anuragkumar19/connect/services/ratelimiter"
-	"github.com/jackc/pgx/v5"
 )
 
 type Users struct {
@@ -21,10 +20,4 @@ func New(store database.Store, m *mailer.Client, r ratelimiter.Service) Users {
 		mailer:      m,
 		rateLimiter: r,
 	}
-}
-
-func (s *Users) WithTx(tx pgx.Tx) Users {
-	ns := *s
-	ns.store = ns.store.WithTx(tx)
-	return ns
 }
