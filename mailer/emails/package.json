@@ -1,0 +1,13 @@
+{
+  "name": "emails",
+  "version": "0.0.1",
+  "description": "Email templates based on MJML",
+  "scripts": {
+    "clean:generate": "rm -rf generated && mkdir generated",
+    "generate": "pnpm clean:generate && mjml --config.beautify true --config.minify false --config.validationLevel=strict --config.keepComments=false ./templates/*.mjml --output ./generated/",
+    "dev": "mjml --config.beautify true --config.minify false --config.validationLevel=strict --config.keepComments=false -w ./templates/*.mjml --output ./generated/"
+  },
+  "dependencies": {
+    "mjml": "^4.15.3"
+  }
+}

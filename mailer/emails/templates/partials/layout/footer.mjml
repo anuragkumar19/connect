@@ -1,0 +1,5 @@
+<mj-column background-color="transparent">
+  <mj-text align="center">
+    &copy; Connect, Patna, Bihar, India ・ TraceID: {{ .TRACE_ID }}.
+  </mj-text>
+</mj-column>

@@ -1,0 +1,55 @@
+<mjml>
+  <!-- global variables -->
+  <!-- <mj-include path="./partials/_globals.mjml" /> -->
+  <!-- css styling -->
+  <mj-include path="./partials/layout/theme.css" type="css" css-inline="inline" />
+  <mj-head>
+    <!-- ⬇ Don't forget to specify an email subject below! ⬇ -->
+    <mj-title>
+      {{ Subject .Subject .TemplateData "Verify your email - {{.Name}}" }}
+    </mj-title>
+    <mj-include path="./partials/layout/head.mjml" />
+  </mj-head>
+  <mj-body>
+    <mj-section>
+      <mj-include path="./partials/layout/header.mjml" />
+    </mj-section>
+    <mj-section css-class="background">
+      <mj-column>
+        <mj-text>
+          <h2>Hi {{ .Name }},</h2>
+        </mj-text>
+        <mj-text>
+          Your OTP for email verification is:
+        </mj-text>
+        <mj-button>
+          {{ .OTP }}
+        </mj-button>
+        <mj-text>
+          You can also verify by following this link.
+        </mj-text>
+        <mj-button href="{{ .VerificationLink }}">
+          Verify Email
+        </mj-button>
+        <mj-text>
+          You can also copy and paste this link into your browser directly:
+        </mj-text>
+        <mj-text>
+          <a rel="noopener" href=""{{ .VerificationLink }}"">{{ .VerificationLink }}</a>
+        </mj-text>
+        <mj-text>
+        Your code is valid for {{ .VerificationExpireIn }}. It will expire at {{ .VerificationExpiry }}
+        </mj-text>
+        <mj-text>
+        If you have not tried to signup for an account you can safely ignore this.
+        </mj-text>
+        <mj-text>
+        Having a trouble? <a href="{{ .ContactUrl }}">Contact us.</a>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section>
+      <mj-include path="./partials/layout/footer.mjml" />
+    </mj-section>
+  </mj-body>
+</mjml>
