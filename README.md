@@ -3,6 +3,7 @@
 ## Go tools required :- task
 
 ## Todo
+- CSS, MJML, JSON formatter and linter
 - SQL formatter
 - Jetstream consumer(current implementations is not good) and publisher protobuf gen
 - NATS pub/sub protobuf gen (bus)

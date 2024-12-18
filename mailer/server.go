@@ -38,7 +38,6 @@ type Server struct {
 	mutex             sync.Mutex
 	config            *Config
 	smtp              *smtp.SMTP
-	js                jetstream.JetStream
 	sendEmailConsumer jetstream.Consumer
 
 	consumers []jetstream.ConsumeContext
@@ -93,13 +92,12 @@ func NewServer(ctx context.Context, config *Config, s *smtp.SMTP, nc *nats.NATS)
 	return Server{
 		config:            config,
 		smtp:              s,
-		js:                js,
 		sendEmailConsumer: sendEmailConsumer,
 		consumers:         []jetstream.ConsumeContext{},
 	}, nil
 }
 
-func (s *Server) Start() error {
+func (s *Server) Start(ctx context.Context) error {
 	s.mutex.Lock()
 	if len(s.consumers) > 0 {
 		return ErrServerAlreadyStarted
