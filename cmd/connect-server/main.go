@@ -132,13 +132,13 @@ func main() {
 	}
 
 	go func() {
-		if err := apiServer.Start(); err != nil {
+		if err := apiServer.Start(ctx); err != nil {
 			log.Fatal().Err(err).Msg("")
 		}
 	}()
 
 	go func() {
-		if err := metricsServer.Start(); err != nil {
+		if err := metricsServer.Start(ctx); err != nil {
 			log.Fatal().Err(err).Msg("")
 		}
 	}()
@@ -152,7 +152,7 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to create mailer server")
 	}
 	go func() {
-		if err := mailerServer.Start(); err != nil {
+		if err := mailerServer.Start(ctx); err != nil {
 			log.Fatal().Err(err).Msg("")
 		}
 	}()

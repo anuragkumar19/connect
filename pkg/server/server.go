@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/go-chi/chi/v5/middleware"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/net/http2"
@@ -23,10 +22,10 @@ var (
 
 type Server struct {
 	logger *zerolog.Logger
-	mutex  sync.Mutex
 	config *Config
-	server *http.Server
 	h      http.Handler
+	mu     sync.Mutex
+	server *http.Server
 }
 
 func New(config *Config, handler http.Handler) (Server, error) {
@@ -39,23 +38,23 @@ func New(config *Config, handler http.Handler) (Server, error) {
 		config: config,
 		h:      handler,
 		logger: &logger,
-		mutex:  sync.Mutex{},
+		mu:     sync.Mutex{},
 		server: nil,
 	}, nil
 }
 
-func (s *Server) Start() error {
-	s.mutex.Lock()
+func (s *Server) Start(ctx context.Context) error {
+	s.mu.Lock()
 	if s.server != nil {
 		return ErrServerAlreadyStarted
 	}
 	addr := fmt.Sprintf("%s:%s", s.config.Host, s.config.Port)
 	s.server = &http.Server{
-		Handler:  h2c.NewHandler(middleware.Timeout(s.config.HandlerTimeout)(recoverer(s.h)), &http2.Server{}),
+		Handler:  h2c.NewHandler(timeout(s.config.HandlerTimeout)(recoverer(s.h)), &http2.Server{}),
 		Addr:     addr,
 		ErrorLog: newErrorLogLogger(s.logger),
 	}
-	s.mutex.Unlock()
+	s.mu.Unlock()
 
 	s.logger.Info().Str("addr", addr).Str("port", s.config.Port).Msg("starting server")
 	err := s.server.ListenAndServe()
@@ -66,8 +65,8 @@ func (s *Server) Start() error {
 }
 
 func (s *Server) Shutdown(ctx context.Context) error {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if s.server == nil {
 		return ErrServerNotStarted
 	}
