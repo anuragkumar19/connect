@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"runtime/debug"
 	"syscall"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/anuragkumar19/connect/mailer"
 	"github.com/anuragkumar19/connect/metrics"
 	"github.com/anuragkumar19/connect/pkg/buildinfo"
+	"github.com/anuragkumar19/connect/pkg/stacktrace"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"go.uber.org/automaxprocs/maxprocs"
@@ -37,6 +39,12 @@ func main() {
 	log.Logger = zerolog.New(os.Stdout).With().Caller().Timestamp().Logger()
 
 	logLevel := zerolog.InfoLevel
+
+	defer func() {
+		if rvr := recover(); rvr != nil {
+			log.Panic().RawJSON("stack", stacktrace.Marshal(debug.Stack())).Msg(fmt.Sprintf("%v", rvr))
+		}
+	}()
 
 	if v := os.Getenv("LOG_LEVEL"); v != "" {
 		lvl, err := zerolog.ParseLevel(v)
