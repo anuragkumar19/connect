@@ -4,7 +4,6 @@ import (
 	stdlog "log"
 
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 )
 
 type errorLogWriter struct {
@@ -21,6 +20,6 @@ func (w *errorLogWriter) Write(p []byte) (n int, err error) {
 		// Trim CR added by stdlog.
 		p = p[0 : n-1]
 	}
-	log.Error().Err(err).Msg(string(p))
+	w.logger.Error().Err(err).Msg(string(p))
 	return
 }
