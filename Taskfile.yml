@@ -7,24 +7,15 @@ vars:
     sh: "pwd"
   CONNECT_SERVER_BUILD_BIN: '{{joinPath .PWD "bin/connect-server" | toSlash}}{{exeExt}}'
   CONNECT_SERVER_DEV_BIN: '{{joinPath .PWD "tmp/connect-server" | toSlash}}{{exeExt}}'
-  BUF_BIN: '{{joinPath .PWD "tools/bin/buf" | toSlash}}{{exeExt}}'
-  GOVULNCHECK_BIN: '{{joinPath .PWD "tools/bin/govulncheck" | toSlash}}{{exeExt}}'
-  GOLANG_CI_LINT_BIN: '{{joinPath .PWD "tools/bin/golang-ci-lint" | toSlash}}{{exeExt}}'
-  YAML_FMT_BIN: '{{joinPath .PWD "tools/bin/yamlfmt" | toSlash}}{{exeExt}}'
-  GOOSE_BIN: '{{joinPath .PWD "tools/bin/goose" | toSlash}}{{exeExt}}'
-  SQLC_BIN: '{{joinPath .PWD "tools/bin/sqlc" | toSlash}}{{exeExt}}'
+  # GOVULNCHECK_BIN: '{{joinPath .PWD "tools/bin/govulncheck" | toSlash}}{{exeExt}}'
+
+  TOOLS: go tool -modfile ./tools/go.mod
   DOCKER_INFRA_FLAGS: "-p connect_dev_infra -f ./docker/dev/docker-compose-infra.yml"
 tasks:
   setup-tools:
     dir: "tools"
     cmds:
       - go mod download
-      - go build -o {{shellQuote .BUF_BIN}} github.com/bufbuild/buf/cmd/buf
-      - go build -o {{shellQuote .GOLANG_CI_LINT_BIN}} github.com/golangci/golangci-lint/cmd/golangci-lint
-      - go build -o {{shellQuote .GOVULNCHECK_BIN}} golang.org/x/vuln/cmd/govulncheck
-      - go build -o {{shellQuote .YAML_FMT_BIN}} github.com/google/yamlfmt/cmd/yamlfmt
-      - go build -o {{shellQuote .GOOSE_BIN}} -tags="no_clickhouse no_libsql no_mssql no_mysql no_sqlite3 no_vertica no_ydb"  github.com/pressly/goose/v3/cmd/goose
-      - go build -o {{shellQuote .SQLC_BIN}} github.com/sqlc-dev/sqlc/cmd/sqlc
   infra-create:
     cmds:
       - "docker compose {{.DOCKER_INFRA_FLAGS}} create"
@@ -56,13 +47,10 @@ tasks:
       COMMIT_HASH_RAW:
         sh: "git log -n 1 --format=%h"
       COMMIT_HASH: "{{trim .COMMIT_HASH_RAW}}"
-      VERSION_RAW:
-        sh: "git describe --tags --abbrev=0"
-      VERSION: "{{trim .VERSION_RAW}}"
       BRANCH_RAW:
         sh: "git rev-parse --abbrev-ref HEAD"
       BRANCH: "{{trim .BRANCH_RAW}}"
-      LINKER_FLAG: "-s -X main.version={{shellQuote .VERSION}} -X main.commit={{shellQuote .COMMIT_HASH}} -X main.buildBranch={{shellQuote .BRANCH}} -X main.buildStampRFC3339={{shellQuote .NOW}}"
+      LINKER_FLAG: "-s -X main.commit={{shellQuote .COMMIT_HASH}} -X main.buildBranch={{shellQuote .BRANCH}} -X main.buildStampRFC3339={{shellQuote .NOW}}"
   dev-build:
     cmds:
       - "go build -o {{shellQuote .CONNECT_SERVER_DEV_BIN}} ./cmd/connect-server"
@@ -81,10 +69,10 @@ tasks:
       - "{{.CONNECT_SERVER_DEV_BIN}}"
   fmt-protobuf:
     cmds:
-      - "{{.BUF_BIN}} format -w"
+      - "{{.TOOLS}} buf format -w"
   fmt-yaml:
     cmds:
-      - "{{.YAML_FMT_BIN}} ."
+      - "{{.TOOLS}} yamlfmt ."
   fmt-go:
     - "go fmt ./..."
   fmt:
@@ -97,16 +85,16 @@ tasks:
       - "go vet ./..."
   lint-go-ci:
     cmds:
-      - "{{.GOLANG_CI_LINT_BIN}} run"
+      - "{{.TOOLS}} golangci-lint run"
   lint-go:
     cmds:
       - task: lint-go-std
       - task: lint-go-ci
   lint-protobuf:
     cmds:
-      - "{{.BUF_BIN}} lint"
+      - "{{.TOOLS}} buf lint"
   lint-sql:
-    - "{{.SQLC_BIN}} vet"
+    - "{{.TOOLS}} sqlc vet"
   lint:
     cmds:
       - task: lint-go
@@ -114,7 +102,7 @@ tasks:
       - task: lint-sql
   generate-sql:
     cmds:
-      - "{{.SQLC_BIN}} generate"
+      - "{{.TOOLS}} sqlc generate"
     sources:
       - sqlc.yaml
       - database/sql/**/*.sql
@@ -122,7 +110,7 @@ tasks:
       - database/*.go
   generate-api:
     cmds:
-      - "{{.BUF_BIN}} generate --template ./api/buf.gen.yaml"
+      - "{{.TOOLS}} buf generate --template ./api/buf.gen.yaml"
     sources:
       - buf.yaml
       - api/buf.gen.yaml
@@ -131,7 +119,7 @@ tasks:
       - api/gen/**/*.go
   generate-events:
     cmds:
-      - "{{.BUF_BIN}} generate --template ./events/buf.gen.yaml"
+      - "{{.TOOLS}} buf generate --template ./events/buf.gen.yaml"
     sources:
       - buf.yaml
       - events/buf.gen.yaml
@@ -149,10 +137,10 @@ tasks:
       GOOSE_DBSTRING: "{{.POSTGRES_URI}}"
       GOOSE_MIGRATION_DIR: database/sql/schema
     cmds:
-      - "{{.GOOSE_BIN}} {{.CLI_ARGS}}"
+      - "{{.TOOLS}} goose {{.CLI_ARGS}}"
     requires:
       vars:
         - POSTGRES_URI
   go-vuln-check:
     cmds:
-      - "{{.GOVULNCHECK_BIN}} ./..."
+      - "{{.TOOLS}} govulncheck ./..."

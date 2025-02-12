@@ -26,7 +26,6 @@ import (
 
 var (
 	bin               = "connect-server"
-	version           = "0.0.1"
 	commit            = "NA"
 	buildBranch       = "main"
 	buildStampRFC3339 string
@@ -55,6 +54,9 @@ func main() {
 	}
 	log.Logger = log.Logger.Level(logLevel)
 
+	buildInfo, _ := debug.ReadBuildInfo()
+	version := buildInfo.Main.Version
+
 	buildStamp = time.Now()
 
 	if buildStampRFC3339 != "" {
@@ -73,10 +75,13 @@ func main() {
 
 	log.Info().Str("version", version).Str("bin", bin).Str("commit", commit).Str("branch", buildBranch).Time("build_at", buildStamp).Msg("")
 
-	maxprocs.Set(maxprocs.Logger(func(s string, i ...interface{}) {
+	_, err := maxprocs.Set(maxprocs.Logger(func(s string, i ...interface{}) {
 		str := fmt.Sprintf(s, i...)
 		log.Info().Msg(str)
 	}))
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to set GOMAXPROCS")
+	}
 
 	ctxBase, cancelBase := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancelBase()

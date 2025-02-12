@@ -44,14 +44,6 @@ const (
 	RegistrationServiceVerifyProcedure = "/auth.v1.RegistrationService/Verify"
 )
 
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	registrationServiceServiceDescriptor          = v1.File_auth_v1_registration_service_proto.Services().ByName("RegistrationService")
-	registrationServiceRegisterMethodDescriptor   = registrationServiceServiceDescriptor.Methods().ByName("Register")
-	registrationServiceResendCodeMethodDescriptor = registrationServiceServiceDescriptor.Methods().ByName("ResendCode")
-	registrationServiceVerifyMethodDescriptor     = registrationServiceServiceDescriptor.Methods().ByName("Verify")
-)
-
 // RegistrationServiceClient is a client for the auth.v1.RegistrationService service.
 type RegistrationServiceClient interface {
 	// Register new user with email or phone number. Sends a verification code to email/phone number. It returns a token which can be used for further requests
@@ -71,25 +63,26 @@ type RegistrationServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewRegistrationServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) RegistrationServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	registrationServiceMethods := v1.File_auth_v1_registration_service_proto.Services().ByName("RegistrationService").Methods()
 	return &registrationServiceClient{
 		register: connect.NewClient[v1.RegisterRequest, v1.RegisterResponse](
 			httpClient,
 			baseURL+RegistrationServiceRegisterProcedure,
-			connect.WithSchema(registrationServiceRegisterMethodDescriptor),
+			connect.WithSchema(registrationServiceMethods.ByName("Register")),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
 		resendCode: connect.NewClient[v1.ResendCodeRequest, v1.ResendCodeResponse](
 			httpClient,
 			baseURL+RegistrationServiceResendCodeProcedure,
-			connect.WithSchema(registrationServiceResendCodeMethodDescriptor),
+			connect.WithSchema(registrationServiceMethods.ByName("ResendCode")),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
 		verify: connect.NewClient[v1.VerifyRequest, v1.VerifyResponse](
 			httpClient,
 			baseURL+RegistrationServiceVerifyProcedure,
-			connect.WithSchema(registrationServiceVerifyMethodDescriptor),
+			connect.WithSchema(registrationServiceMethods.ByName("Verify")),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
@@ -134,24 +127,25 @@ type RegistrationServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewRegistrationServiceHandler(svc RegistrationServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	registrationServiceMethods := v1.File_auth_v1_registration_service_proto.Services().ByName("RegistrationService").Methods()
 	registrationServiceRegisterHandler := connect.NewUnaryHandler(
 		RegistrationServiceRegisterProcedure,
 		svc.Register,
-		connect.WithSchema(registrationServiceRegisterMethodDescriptor),
+		connect.WithSchema(registrationServiceMethods.ByName("Register")),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
 	registrationServiceResendCodeHandler := connect.NewUnaryHandler(
 		RegistrationServiceResendCodeProcedure,
 		svc.ResendCode,
-		connect.WithSchema(registrationServiceResendCodeMethodDescriptor),
+		connect.WithSchema(registrationServiceMethods.ByName("ResendCode")),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
 	registrationServiceVerifyHandler := connect.NewUnaryHandler(
 		RegistrationServiceVerifyProcedure,
 		svc.Verify,
-		connect.WithSchema(registrationServiceVerifyMethodDescriptor),
+		connect.WithSchema(registrationServiceMethods.ByName("Verify")),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
